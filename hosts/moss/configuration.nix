@@ -65,8 +65,7 @@
   };
   programs.firefox.enable = true;
   environment.systemPackages = with pkgs; [
-    #inputs.alejandra.defaultPackage.${system}
-    #inputs.agenix.packages.${system}.default
+    alejandra
     nix-prefetch-scripts
     nixpkgs-fmt
     lgtv

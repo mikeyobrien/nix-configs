@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   lib,
   user,
@@ -6,8 +7,7 @@
   ...
 }: {
   imports = [
-    inputs.nixvim.homeManagerModules.nixvim
-    (import ./nixvim {inherit inputs pkgs;})
+    (import ./nixvim {inherit config lib inputs pkgs;})
   ];
 
   home.packages = with pkgs; [

@@ -11,7 +11,7 @@
     ];
     keymaps = [
       {
-        key = "<leader>pf";
+        key = "<leader>ff";
         action = "<cmd>lua require('telescope.builtin').find_files()<CR>";
       }
       {
@@ -19,7 +19,7 @@
         action = "<cmd>lua require('telescope.builtin').grep_string()<CR>";
       }
       {
-        key = "<leader>pr";
+        key = "<leader>fr";
         action = "<cmd>lua require('telescope.builtin').oldfiles()<CR>";
       }
       {

@@ -1,5 +1,19 @@
-{ ... }: {
+{pkgs, ...}: {
   programs.nixvim = {
+    plugins.lazy.enable = true;
+    plugins.lazy.plugins = [
+      {
+        # TODO: This isn't working atm
+        pkg = pkgs.vimPlugins.which-key-nvim;
+        event = "VeryLazy";
+        init = ''
+          function()
+            vim.o.timeout = true
+            vim.o.timeoutlen = 300
+          end
+        '';
+      }
+    ];
     keymaps = [
       {
         key = "<C-d>";
