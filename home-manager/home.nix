@@ -87,6 +87,11 @@
           mods = "Command";
           action = "DecreaseFontSize";
         }
+        {
+          key = "N";
+          mods = "Shift|Control";
+          action = "CreateNewWindow";
+        }
       ];
     };
   };
