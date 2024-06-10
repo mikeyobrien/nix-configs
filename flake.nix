@@ -13,11 +13,17 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
+    nixos-generators,
     ...
   } @ inputs: let
     inherit (self) outputs;
@@ -38,12 +44,17 @@
     # TODO Find out whats the advantage of setting these as outputs
     packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
-    nixosModules = import ./modules/nixos;
+    nixosModules = import ./modules/nixos {inherit inputs;};
     homeManagerModules = import ./modules/home-manager;
     overlays = overlays;
 
     nixosConfigurations = {
       moss = mkSystem "moss" {
+        user = "mobrienv";
+        system = "x86_64-linux";
+      };
+
+      rhizome = mkSystem "rhizome" {
         user = "mobrienv";
         system = "x86_64-linux";
       };

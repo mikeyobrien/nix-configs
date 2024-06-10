@@ -28,6 +28,7 @@ in
   systemFunc rec {
     inherit system;
     modules = [
+      outputs.nixosModules.proxmox
       {
         nixpkgs.config.allowUnfree = true;
         nixpkgs.overlays = [

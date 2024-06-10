@@ -1,6 +1,12 @@
-# Add your reusable NixOS modules to this directory, on their own file (https://nixos.wiki/wiki/Module).
-# These should be stuff you would like to share with others, not your personal configurations.
-{
+{inputs, ...}: {
   # List your module files here
-  # my-module = import ./my-module.nix;
+  proxmox = {config, ...}: {
+    imports = [
+      inputs.nixos-generators.nixosModules.all-formats
+    ];
+    nixpkgs.hostPlatform = "x86_64-linux";
+    formatConfigs.proxmox = {config, ...}: {
+      proxmox.qemuConf.name = "${config.networking.hostName}-nixos-${config.system.nixos.label}";
+    };
+  };
 }
