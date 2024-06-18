@@ -34,7 +34,6 @@ in
         nixpkgs.overlays = [
           overlays.modifications
           overlays.additions
-          overlays.modifications
           overlays.unstable-packages
         ];
       }

@@ -22,6 +22,7 @@ in {
     ./copilot.nix
     ./lualine.nix
     ./harpoon.nix
+    ./treesitter.nix
     #./indentscope.nix
   ];
 
@@ -31,6 +32,8 @@ in {
       enable = true;
       package = inputs.neovim-nightly-overlay.packages.${pkgs.system}.default;
 
+      colorschemes.tokyonight.enable = true;
+      colorschemes.tokyonight.settings.integrations.treesitter = true;
       defaultEditor = true;
       luaLoader.enable = true;
 
@@ -38,11 +41,8 @@ in {
       vimAlias = true;
       globals.mapleader = " ";
 
-      extraPackages = with pkgs; [
-        tree-sitter
-      ];
-
       opts = {
+        timeoutlen = 500;
         number = true;
         relativenumber = true;
         signcolumn = "yes";
@@ -58,13 +58,11 @@ in {
         expandtab = true;
         smarttab = true;
 
-        clipboard = "unnamedplus";
         ruler = true;
         scrolloff = 5;
       };
 
-      colorschemes.tokyonight.enable = true;
-      colorschemes.tokyonight.settings.integrations.treesitter = true;
+      # LSP servers are configured at nix build time, contrary to using mason
       plugins.lsp = {
         enable = true;
         servers = {

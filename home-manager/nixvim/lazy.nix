@@ -1,9 +1,6 @@
 {pkgs, ...}: {
   programs.nixvim = {
     plugins.lazy.enable = true;
-    extraPackages = with pkgs; [
-      tree-sitter
-    ];
     plugins.lazy.plugins = with pkgs.vimPlugins; [
       {
         pkg = telescope-nvim;

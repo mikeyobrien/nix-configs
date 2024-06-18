@@ -1,6 +1,10 @@
 {pkgs, ...}: {
   programs.nixvim = {
     plugins.lazy.enable = true;
+    extraPackages = with pkgs; [
+      fd
+      ripgrep
+    ];
     plugins.lazy.plugins = with pkgs.vimPlugins; [
       {
         pkg = telescope-nvim;
@@ -13,6 +17,10 @@
       {
         key = "<leader>ff";
         action = "<cmd>lua require('telescope.builtin').find_files()<CR>";
+      }
+      {
+        key = "<leader><leader>";
+        action = "<cmd>lua require('telescope.builtin').git_files()<CR>";
       }
       {
         key = "<leader>/";
