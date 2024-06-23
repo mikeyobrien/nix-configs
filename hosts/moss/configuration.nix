@@ -131,6 +131,7 @@
       PermitRootLogin = "no";
     };
   };
+  services.tailscale.enable = true;
 
   networking.firewall.enable = false;
 
