@@ -11,7 +11,16 @@
     ../defaults.nix
     ./hardware-configuration.nix
   ];
-  nix.settings.trusted-users = ["root" "mobrienv"];
+  nix.settings = {
+    trusted-users = ["root" "mobrienv"];
+    builders-use-substitutes = true;
+    # extra-substituters = [
+    #   "https://anyrun.nixos.org"
+    # ];
+    # extra-trusted-public-keys = [
+    #   "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
+    # ];
+  };
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
@@ -42,11 +51,25 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   services.xserver.enable = true;
-  services.xserver.videoDrivers = ["amdgpu"];
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-  services.xserver.xkb = {
-    layout = "us";
+  services.displayManager.sddm.enable = true;
+
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
+
+  # Optional: Enable the Hyprland helper services (these come from the Hyprland NixOS module)
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-hyprland];
+
+  # Optional: If you want to use native Wayland for Qt applications
+  qt.platformTheme = "qt5ct";
+  qt.style = "adwaita";
+
+  # Ensure Wayland is used
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    WLR_NO_HARDWARE_CURSORS = "1"; # If you have issues with cursor rendering
   };
 
   services.printing.enable = true;
@@ -74,50 +97,13 @@
     zig
     vim
     wget
-    gnome.gnome-tweaks
-    gnome.adwaita-icon-theme
+    wayland
+    xdg-utils
+    glib
+    gnome3.adwaita-icon-theme
+    swaylock
+    swayidle
   ];
-
-  environment.gnome.excludePackages =
-    (with pkgs; [
-      gnome-photos
-      gnome-tour
-      gedit
-    ])
-    ++ (with pkgs.gnome; [
-      cheese # webcam tool
-      gnome-music
-      gnome-terminal
-      epiphany # web browser
-      geary # email reader
-      evince # document viewer
-      gnome-characters
-      totem # video player
-      tali # poker game
-      iagno # go game
-      hitori # sudoku game
-      atomix # puzzle game
-    ]);
-
-  systemd.services.lgtvScreenOff = {
-    enable = true;
-    description = "Turn lgtv screen off suspend";
-    before = ["suspend.target"];
-    serviceConfig = {
-      ExecStart = "${pkgs.lgtv}/bin/lgtv --ssl screenOff";
-      User = "mobrienv";
-    };
-  };
-
-  systemd.services.lgtvScreenOn = {
-    enable = true;
-    description = "Turn lgtv screen on on wake";
-    after = ["suspend.target"];
-    serviceConfig = {
-      ExecStart = "${pkgs.lgtv}/bin/lgtv --ssl screenOn";
-      User = "mobrienv";
-    };
-  };
 
   programs.mtr.enable = true;
   programs.gnupg.agent = {
