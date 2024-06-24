@@ -23,6 +23,7 @@
       url = "github:anyrun-org/anyrun";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    agenix.url = "github:ryantm/agenix";
   };
 
   outputs = {
@@ -60,6 +61,11 @@
       };
 
       rhizome = mkSystem "rhizome" {
+        user = "mobrienv";
+        system = "x86_64-linux";
+      };
+
+      driftwood = mkSystem "driftwood" {
         user = "mobrienv";
         system = "x86_64-linux";
       };

@@ -8,6 +8,7 @@
   ...
 }: {
   imports = [
+    ../defaults.nix
     ./hardware-configuration.nix
   ];
   nix.settings = {
@@ -26,7 +27,7 @@
 
   # TODO: refactor since this will be shared across hosts
   environment.pathsToLink = ["/share/fish"];
-  users.users.mobrienv = {
+ users.users.mobrienv = {
     isNormalUser = true;
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];

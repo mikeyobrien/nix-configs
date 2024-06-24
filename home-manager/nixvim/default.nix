@@ -22,7 +22,7 @@ in {
     ./copilot.nix
     ./lualine.nix
     ./harpoon.nix
-    ./treesitter.nix
+    #./treesitter.nix
     #./indentscope.nix
   ];
 
