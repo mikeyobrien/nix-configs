@@ -7,6 +7,7 @@
   ...
 }: {
   imports = [
+    inputs.anyrun.homeManagerModules.default
     (import ./nixvim {inherit config lib inputs pkgs;})
   ];
 
@@ -46,6 +47,8 @@
     python3
     nodePackages.pyright
   ];
+
+  services.syncthing.enable = true;
 
   programs.direnv.enable = true;
   programs.gpg.enable = true;
