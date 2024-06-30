@@ -20,12 +20,17 @@
     };
 
     agenix.url = "github:ryantm/agenix";
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-23.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
     nixos-generators,
+    nix-on-droid,
     ...
   } @ inputs: let
     inherit (self) outputs;
@@ -62,8 +67,8 @@
       };
 
       driftwood = mkSystem "driftwood" {
-      	user = "mobrienv";
-	system = "x86_64-linux";
+        user = "mobrienv";
+        system = "x86_64-linux";
       };
     };
 
@@ -77,5 +82,15 @@
     #     ];
     #   };
     # };
+
+    nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
+      modules = [
+        #inputs.home-manager-2311.nixosModules.home-manager
+        (import ./hosts/droid/configuration.nix {
+          user = "mobrienv";
+          inputs = inputs;
+        })
+      ];
+    };
   };
 }

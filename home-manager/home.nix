@@ -11,7 +11,6 @@
   ];
 
   home.packages = with pkgs; [
-    steam
     firefox
     (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
     jq
@@ -49,7 +48,17 @@
 
   programs.direnv.enable = true;
   programs.gpg.enable = true;
-  programs.starship.enable = true;
+  programs.starship = {
+    enable = true;
+    settings = {
+      hostname = {
+        ssh_only = false;
+        format = "[$hostname]($style) ";
+      };
+    };
+  };
+
+
   programs.alacritty = {
     enable = true;
     settings = {
