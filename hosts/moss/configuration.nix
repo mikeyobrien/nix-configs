@@ -5,10 +5,11 @@
   inputs,
   pkgs,
   outputs,
+  config,
   ...
 }: {
   imports = [
-    ../defaults.nix
+    ../default.nix
     ./hardware-configuration.nix
   ];
   nix.settings = {
@@ -25,14 +26,22 @@
     experimental-features = nix-command flakes
   '';
 
+  programs.kdeconnect = {
+    enable = true;
+    package = pkgs.valent;
+  };
+
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = true;
+
   # TODO: refactor since this will be shared across hosts
   environment.pathsToLink = ["/share/fish"];
- users.users.mobrienv = {
+  users.users.mobrienv = {
     isNormalUser = true;
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];
     shell = pkgs.fish;
-    hashedPassword = "$6$h7nrbcXumdWOMzVA$x0CdnTLQbUi1mpekKER.mYmvSqUkx2ySI6UL7V1X3z70c.Hicjn4EkcHI3MkuCHpf080J9jnjnG2W9pgGa24j/";
+    passwordFile = config.age.secrets.password.path;
     openssh.authorizedKeys.keys = [];
   };
 
@@ -51,6 +60,8 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   services.xserver.enable = true;
+  services.xserver.videoDrivers = ["amdgpu"];
+
   services.displayManager.sddm.enable = true;
 
   programs.hyprland = {
@@ -92,6 +103,7 @@
     alejandra
     nix-prefetch-scripts
     nixpkgs-fmt
+    nix-index
     lgtv
     gcc
     zig
@@ -103,6 +115,8 @@
     gnome3.adwaita-icon-theme
     swaylock
     swayidle
+    dnsutils
+    usbutils
   ];
 
   programs.mtr.enable = true;
@@ -111,15 +125,42 @@
     enableSSHSupport = true;
   };
 
+  services.blueman.enable = true;
   services.openssh = {
     enable = true;
     settings = {
       PermitRootLogin = "no";
     };
   };
+
+  programs.steam = {
+    enable = true;
+    localNetworkGameTransfers.openFirewall = true;
+  };
+
   services.tailscale.enable = true;
 
+  services.sunshine = {
+    enable = true;
+    capSysAdmin = true;
+  };
+
   networking.firewall.enable = false;
+
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    publish = {
+      enable = true;
+      addresses = true;
+      domain = true;
+      hinfo = true;
+      userServices = true;
+      workstation = true;
+    };
+  };
+
+  services.flatpak.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?
 }

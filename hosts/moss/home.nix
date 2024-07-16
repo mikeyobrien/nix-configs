@@ -26,6 +26,10 @@
       resize_on_border = true;
     };
 
+    input = {
+      kb_options = "ctrl:nocaps";
+    };
+
     decoration = {
       rounding = 8;
       blur = {
@@ -52,9 +56,13 @@
       "col.shadow" = "rgba(00000055)";
     };
 
+    windowrulev2 = [
+      "float,class:(clipse)"
+      "size 622 652,class:(clipse)"
+    ];
+
     exec-once = [
-      "wl-paste --type text --watch cliphist store"
-      "wl-paste --type image --watch cliphist store"
+      "clipse -listen"
       "~/.config/hypr/suspend.sh"
     ];
     "$mod" = "SUPER";
@@ -70,7 +78,7 @@
         "$mod, R, exec, anyrun"
         "$mod, P, pseudo"
         "$mod, J, togglesplit"
-        "$mod, V, exec, cliphist list | anyrun -d | cliphist decode | wl-copy"
+        "$mod, V, exec, alacritty --class clipse -e \'clipse\'"
         "$mod SHIFT, V, exec, cliphist list | anyrun -d | cliphist delete"
         "$mod SHIFT, Q, killactive"
         "$mod, M, exit"
@@ -83,6 +91,10 @@
         "$mod SHIFT, k, swapwindow, u"
         "$mod SHIFT, l, swapwindow, r"
         ", Print, exec, grimblast copy area"
+        "ALT SHIFT, 2, exec, grimblast --notify copysave active"
+        "ALT SHIFT, 3, exec, grimblast --notify copysave screen"
+        "ALT SHIFT, 4, exec, grimblast --notify copysave area"
+        "ALT CTRL SHIFT, 4, exec, grimblast --notify save area"
       ]
       ++ (
         # workspaces
@@ -104,6 +116,7 @@
     monitor = [
       "HDMI-A-1,3840x2160@120,0x0,1"
       "DP-3,1920x1080,3840x540,1"
+      "HEADLESS-2,1920x1080@120,5760x0,1"
     ];
 
     workspace = [
@@ -161,6 +174,11 @@
           color: #cdd6f4;
       }
 
+      #idle_inhibitor {
+          padding: 0 25px;
+          margin: 0 5px;
+      }
+
       #clock, #custom-weather, #cpu, #memory, #temperature, #custom-gpu, #network, #pulseaudio {
           padding: 0 10px;
           margin: 0 5px;
@@ -184,7 +202,7 @@
         height = 120;
         width = 3840;
         output = "HDMI-A-1";
-        modules-left = ["custom/logo" "hyprland/workspaces" "custom/weather"];
+        modules-left = ["custom/logo" "hyprland/workspaces" "custom/weather" "idle_inhibitor"];
         modules-center = ["clock" "custom/media"];
         modules-right = ["cpu" "memory" "temperature" "custom/gpu" "network" "pulseaudio"];
         "custom/logo" = {
@@ -212,8 +230,16 @@
           };
         };
         "custom/weather" = {
-          exec = "curl 'https://wttr.in/?format=1'";
+          exec = "curl 'https://wttr.in/Austin?u&format=1'";
           interval = 3600;
+        };
+        "idle_inhibitor" = {
+          format = "{icon}";
+          format-icons = {
+            "activated" = "";
+            "deactivated" = "";
+          };
+          timeout = 30.5;
         };
         "clock" = {
           format = "{:%Y-%m-%d %H:%M}";
@@ -295,19 +321,29 @@
     text = ''
       #!/usr/bin/env bash
       swayidle -w \
-      timeout 300 'hyprctl dispatch dpms off && ${pkgs.lgtv} --ssl screenOff' \
-      timeout 900 'systemctl hibernate' \
-      resume 'hyperctl dispatch dpms on && ${pkgs.lgtv} --ssl screenOn' \
-      before-sleep '${pkgs.lgtv} --ssl screenOff'
+      timeout 300 '${pkgs.lgtv} --ssl screenOff' \
+      timeout 900 'systemctl suspend' \
+      resume '${pkgs.lgtv} --ssl on' \
+      before-sleep '${pkgs.lgtv} --ssl off'
     '';
     executable = true;
   };
 
-  home.packages = [
-    pkgs.pavucontrol
-    pkgs.curl
-    pkgs.cliphist
-    pkgs.wl-clipboard
+  home.packages = with pkgs; [
+    pavucontrol
+    curl
+    cliphist
+    wl-clipboard
+    clipse
+
+    # screenshots
+    grimblast
+    slurp
+
+    signal-desktop
+
+    # productivity
+    ticktick
   ];
 
   editors.nixvim = {

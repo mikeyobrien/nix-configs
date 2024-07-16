@@ -11,7 +11,7 @@
     ../default.nix
     ./hardware-configuration.nix
   ];
-  nixpkgs.config.allowUnfree = true; 
+  nixpkgs.config.allowUnfree = true;
   nixpkgs.config.cudaSupport = true;
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
@@ -34,8 +34,6 @@
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
 
-  services.xserver.xkb.layout = "us";
-
   hardware.opengl = {
     enable = true;
     driSupport = true;
@@ -43,6 +41,7 @@
   };
 
   services.xserver.videoDrivers = ["nvidia"];
+  services.xserver.xkb.layout = "us";
   hardware.nvidia = {
     modesetting.enable = true;
     open = false;
@@ -134,7 +133,7 @@
   networking.firewall.allowedUDPPorts = [
     8554
     21027
-  ];  
+  ];
 
   fileSystems."/mnt/unraid" = {
     device = "unraid.local:/mnt/user/nixos";
@@ -148,7 +147,7 @@
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
 
- fileSystems."/mnt/appdata" = {
+  fileSystems."/mnt/appdata" = {
     device = "unraid.local:/mnt/user/appdata";
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];

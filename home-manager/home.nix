@@ -47,8 +47,6 @@
     nodePackages.pyright
   ];
 
-  services.syncthing.enable = true;
-
   programs.direnv.enable = true;
   programs.gpg.enable = true;
   programs.starship = {
