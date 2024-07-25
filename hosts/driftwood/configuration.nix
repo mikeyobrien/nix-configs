@@ -76,7 +76,7 @@
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];
     shell = pkgs.fish;
-    passwordFile = config.age.secrets.password.path;
+    hashedPasswordFile = config.age.secrets.password.path;
     openssh.authorizedKeys.keys = [];
   };
 
