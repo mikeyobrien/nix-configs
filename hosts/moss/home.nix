@@ -11,6 +11,11 @@
   };
 
   # hyprland
+  programs.rofi = {
+    enable = true;
+    terminal = "${pkgs.alacritty}/bin/alacritty";
+  };
+
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.systemd.extraCommands = [
     "waybar"
@@ -64,6 +69,7 @@
     exec-once = [
       "clipse -listen"
       "~/.config/hypr/suspend.sh"
+      "xdg-mime default thunar.desktop inode/directory"
     ];
     "$mod" = "SUPER";
     bindm = [
@@ -78,9 +84,11 @@
         "$mod, R, exec, anyrun"
         "$mod, P, pseudo"
         "$mod, J, togglesplit"
+        "$mod, E, exec, thunar"
         "$mod, V, exec, alacritty --class clipse -e \'clipse\'"
         "$mod SHIFT, V, exec, cliphist list | anyrun -d | cliphist delete"
         "$mod SHIFT, Q, killactive"
+        "$mod SHIFT, F, toggleFloating"
         "$mod, M, exit"
         "$mod, h, movefocus, l"
         "$mod, j, movefocus, d"
@@ -139,76 +147,38 @@
       "center,^(anyrun)$"
       "size 800 600,^(Bitwarden)$"
       "center,^(Bitwarden)$"
+      "float,^(Signal)$"
     ];
+  };
+
+  home.file = {
+    ".config/hypr/scripts/menu".text = ''
+      #!/usr/bin/env bash
+      if [[ ! $(pidof anyrun) ]]; then
+        anyrun
+      else
+        pkill anyrun
+      fi
+    '';
   };
 
   # waybar
   programs.waybar = {
     enable = true;
-    style = ''
-      * {
-          border: none;
-          border-radius: 0;
-          font-family: "JetBrainsMono Nerd Font";
-          font-size: 32px;
-          min-height: 0;
-      }
-
-      window#waybar {
-          background: rgba(30, 30, 46, 0.5);
-          color: #cdd6f4;
-      }
-
-      #custom-logo {
-          font-size: 68px;
-          padding: 0 25px;
-          color: #89b4fa;
-      }
-
-      #workspaces button {
-          padding: 5px;
-          color: #6c7086;
-      }
-
-      #workspaces button.active {
-          color: #cdd6f4;
-      }
-
-      #idle_inhibitor {
-          padding: 0 25px;
-          margin: 0 5px;
-      }
-
-      #clock, #custom-weather, #cpu, #memory, #temperature, #custom-gpu, #network, #pulseaudio {
-          padding: 0 10px;
-          margin: 0 5px;
-          background-color: #313244;
-          border-radius: 10px;
-      }
-
-      #custom-media {
-          background-color: #313244;
-          padding: 0 10px;
-          margin: 0 5px;
-          border-radius: 10px;
-          color: #f9e2af;
-      }
-    '';
+    style = builtins.readFile (./. + "/waybar.css");
 
     settings = [
       {
         layer = "top";
         position = "top";
-        height = 120;
-        width = 3840;
+        height = 40;
+        spacing = 4;
         output = "HDMI-A-1";
-        modules-left = ["custom/logo" "hyprland/workspaces" "custom/weather" "idle_inhibitor"];
-        modules-center = ["clock" "custom/media"];
-        modules-right = ["cpu" "memory" "temperature" "custom/gpu" "network" "pulseaudio"];
-        "custom/logo" = {
-          format = "󱄅";
-          tooltip = false;
-        };
+
+        modules-left = ["idle_inhibitor" "pulseaudio" "cpu" "memory" "temperature" "hyprland/workspaces"];
+        modules-center = ["custom/launcher" "custom/media" "wlr/taskbar" "custom/power"];
+        modules-right = ["keyboard-state" "network" "tray" "clock"];
+
         "hyprland/workspaces" = {
           disable-scroll = true;
           all-outputs = true;
@@ -224,64 +194,116 @@
             "8" = "8";
             "9" = "9";
             "10" = "10";
-            "urgent" = "";
-            "focused" = "";
-            "default" = "";
           };
         };
-        "custom/weather" = {
-          exec = "curl 'https://wttr.in/Austin?u&format=1'";
-          interval = 3600;
+
+        "keyboard-state" = {
+          numlock = true;
+          capslock = true;
+          format = " {name} {icon}";
+          format-icons = {
+            locked = "";
+            unlocked = "";
+          };
         };
+
+        "wlr/taskbar" = {
+          format = "{icon}";
+          icon-size = 20;
+          icon-theme = "Star";
+          tooltip-format = "{title}";
+          on-click = "minimize";
+          on-click-middle = "close";
+          on-click-right = "activate";
+        };
+
+        "sway/language" = {
+          format = " {}";
+        };
+
         "idle_inhibitor" = {
           format = "{icon}";
           format-icons = {
-            "activated" = "";
-            "deactivated" = "";
+            activated = "";
+            deactivated = "";
           };
-          timeout = 30.5;
         };
-        "clock" = {
-          format = "{:%Y-%m-%d %H:%M}";
+
+        tray = {
+          icon-size = 20;
+          spacing = 10;
+        };
+
+        clock = {
           tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+          format-alt = "{:%Y-%m-%d}";
         };
-        "cpu" = {
-          format = "{usage}% ";
+
+        cpu = {
+          format = "{usage}% ";
           tooltip = false;
         };
-        "memory" = {
-          format = "{}% ";
+
+        memory = {
+          format = "{}% ";
         };
-        "temperature" = {
+
+        temperature = {
           critical-threshold = 80;
           format = "{temperatureC}°C {icon}";
-          format-icons = ["" "" ""];
+          format-icons = ["" "" ""];
         };
-        "network" = {
-          format-wifi = "{essid} ({signalStrength}%) ";
-          format-ethernet = "{ipaddr}/{cidr} ";
-          tooltip-format = "{ifname} via {gwaddr} ";
-          format-linked = "{ifname} (No IP) ";
+
+        backlight = {
+          format = "{percent}% {icon}";
+          format-icons = ["" ""];
+        };
+
+        network = {
+          format-wifi = "{essid} ({signalStrength}%) ";
+          format-ethernet = "Connected  ";
+          tooltip-format = "{ifname} via {gwaddr} ";
+          format-linked = "{ifname} (No IP) ";
           format-disconnected = "Disconnected ⚠";
           format-alt = "{ifname}: {ipaddr}/{cidr}";
+          on-click-right = "bash ~/.config/rofi/wifi_menu/rofi_wifi_menu";
         };
-        "pulseaudio" = {
-          format = "{volume}% {icon} {format_source}";
-          format-bluetooth = "{volume}% {icon} {format_source}";
-          format-bluetooth-muted = " {icon} {format_source}";
-          format-muted = " {format_source}";
-          format-source = "{volume}% ";
-          format-source-muted = "";
+
+        pulseaudio = {
+          format = "{volume}% {icon}";
+          format-bluetooth = "{volume}% {icon}";
+          format-bluetooth-muted = "{icon} {format_source}";
+          format-muted = "{format_source}";
+          format-source = "";
+          format-source-muted = "";
           format-icons = {
-            "headphone" = "";
-            "hands-free" = "";
-            "headset" = "";
-            "phone" = "";
-            "portable" = "";
-            "car" = "";
-            "default" = ["" "" ""];
+            headphone = "";
+            hands-free = "";
+            headset = "";
+            phone = "";
+            portable = "";
+            car = "";
+            default = ["" "" ""];
           };
           on-click = "pavucontrol";
+        };
+
+        "custom/media" = {
+          format = "{icon} {}";
+          return-type = "json";
+          max-length = 15;
+          format-icons = {
+            spotify = " ";
+            default = "M ";
+          };
+          escape = true;
+          exec = "$HOME/.config/system_scripts/mediaplayer.py 2> /dev/null";
+          on-click = "playerctl play-pause";
+        };
+
+        "custom/launcher" = {
+          format = "";
+          on-click = "$HOME/.config/hypr/scripts/menu";
         };
       }
     ];
@@ -335,6 +357,8 @@
     cliphist
     wl-clipboard
     clipse
+    rofi
+    xfce.thunar
 
     # screenshots
     grimblast
@@ -344,6 +368,9 @@
 
     # productivity
     ticktick
+
+    discord
+    google-chrome
   ];
 
   editors.nixvim = {

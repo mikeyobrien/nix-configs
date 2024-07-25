@@ -13,7 +13,7 @@
 
   home.packages = with pkgs; [
     firefox
-    (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
+    (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono" "DroidSansMono"];})
     jq
     fd
     ripgrep
@@ -58,7 +58,6 @@
       };
     };
   };
-
 
   programs.alacritty = {
     enable = true;

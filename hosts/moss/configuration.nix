@@ -26,6 +26,8 @@
     experimental-features = nix-command flakes
   '';
 
+  virtualisation.docker.enable = true;
+
   programs.kdeconnect = {
     enable = true;
     package = pkgs.valent;
@@ -41,7 +43,7 @@
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];
     shell = pkgs.fish;
-    passwordFile = config.age.secrets.password.path;
+    hashedPasswordFile = config.age.secrets.password.path;
     openssh.authorizedKeys.keys = [];
   };
 
@@ -158,6 +160,12 @@
       userServices = true;
       workstation = true;
     };
+  };
+
+  fileSystems."/mnt/network" = {
+    device = "unraid.local:/mnt/user/network";
+    fsType = "nfs";
+    options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
 
   services.flatpak.enable = true;
