@@ -24,7 +24,7 @@
       }
       {
         key = "<leader>/";
-        action = "<cmd>lua require('telescope.builtin').grep_string()<CR>";
+        action = "<cmd>lua require('telescope.builtin').live_grep()<CR>";
       }
       {
         key = "<leader>fr";
