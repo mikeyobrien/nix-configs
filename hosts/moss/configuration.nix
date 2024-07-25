@@ -5,25 +5,45 @@
   inputs,
   pkgs,
   outputs,
+  config,
   ...
 }: {
   imports = [
-    ../defaults.nix
+    ../default.nix
     ./hardware-configuration.nix
   ];
-  nix.settings.trusted-users = ["root" "mobrienv"];
+  nix.settings = {
+    trusted-users = ["root" "mobrienv"];
+    builders-use-substitutes = true;
+    # extra-substituters = [
+    #   "https://anyrun.nixos.org"
+    # ];
+    # extra-trusted-public-keys = [
+    #   "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
+    # ];
+  };
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
 
+  virtualisation.docker.enable = true;
+
+  programs.kdeconnect = {
+    enable = true;
+    package = pkgs.valent;
+  };
+
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = true;
+
   # TODO: refactor since this will be shared across hosts
   environment.pathsToLink = ["/share/fish"];
- users.users.mobrienv = {
+  users.users.mobrienv = {
     isNormalUser = true;
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];
     shell = pkgs.fish;
-    hashedPassword = "$6$h7nrbcXumdWOMzVA$x0CdnTLQbUi1mpekKER.mYmvSqUkx2ySI6UL7V1X3z70c.Hicjn4EkcHI3MkuCHpf080J9jnjnG2W9pgGa24j/";
+    hashedPasswordFile = config.age.secrets.password.path;
     openssh.authorizedKeys.keys = [];
   };
 
@@ -43,10 +63,26 @@
 
   services.xserver.enable = true;
   services.xserver.videoDrivers = ["amdgpu"];
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-  services.xserver.xkb = {
-    layout = "us";
+
+  services.displayManager.sddm.enable = true;
+
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
+
+  # Optional: Enable the Hyprland helper services (these come from the Hyprland NixOS module)
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-hyprland];
+
+  # Optional: If you want to use native Wayland for Qt applications
+  qt.platformTheme = "qt5ct";
+  qt.style = "adwaita";
+
+  # Ensure Wayland is used
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    WLR_NO_HARDWARE_CURSORS = "1"; # If you have issues with cursor rendering
   };
 
   services.printing.enable = true;
@@ -69,55 +105,21 @@
     alejandra
     nix-prefetch-scripts
     nixpkgs-fmt
+    nix-index
     lgtv
     gcc
     zig
     vim
     wget
-    gnome.gnome-tweaks
-    gnome.adwaita-icon-theme
+    wayland
+    xdg-utils
+    glib
+    gnome3.adwaita-icon-theme
+    swaylock
+    swayidle
+    dnsutils
+    usbutils
   ];
-
-  environment.gnome.excludePackages =
-    (with pkgs; [
-      gnome-photos
-      gnome-tour
-      gedit
-    ])
-    ++ (with pkgs.gnome; [
-      cheese # webcam tool
-      gnome-music
-      gnome-terminal
-      epiphany # web browser
-      geary # email reader
-      evince # document viewer
-      gnome-characters
-      totem # video player
-      tali # poker game
-      iagno # go game
-      hitori # sudoku game
-      atomix # puzzle game
-    ]);
-
-  systemd.services.lgtvScreenOff = {
-    enable = true;
-    description = "Turn lgtv screen off suspend";
-    before = ["suspend.target"];
-    serviceConfig = {
-      ExecStart = "${pkgs.lgtv}/bin/lgtv --ssl screenOff";
-      User = "mobrienv";
-    };
-  };
-
-  systemd.services.lgtvScreenOn = {
-    enable = true;
-    description = "Turn lgtv screen on on wake";
-    after = ["suspend.target"];
-    serviceConfig = {
-      ExecStart = "${pkgs.lgtv}/bin/lgtv --ssl screenOn";
-      User = "mobrienv";
-    };
-  };
 
   programs.mtr.enable = true;
   programs.gnupg.agent = {
@@ -125,6 +127,7 @@
     enableSSHSupport = true;
   };
 
+  services.blueman.enable = true;
   services.openssh = {
     enable = true;
     settings = {
@@ -133,7 +136,40 @@
   };
   services.tailscale.enable = true;
 
+  programs.steam = {
+    enable = true;
+    localNetworkGameTransfers.openFirewall = true;
+  };
+
+  services.tailscale.enable = true;
+
+  services.sunshine = {
+    enable = true;
+    capSysAdmin = true;
+  };
+
   networking.firewall.enable = false;
+
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    publish = {
+      enable = true;
+      addresses = true;
+      domain = true;
+      hinfo = true;
+      userServices = true;
+      workstation = true;
+    };
+  };
+
+  fileSystems."/mnt/network" = {
+    device = "unraid.local:/mnt/user/network";
+    fsType = "nfs";
+    options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
+  };
+
+  services.flatpak.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?
 }

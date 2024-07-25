@@ -10,7 +10,7 @@
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nixvim = {
-      url = "github:nix-community/nixvim";
+      url = "github:nix-community/nixvim/nixos-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -19,6 +19,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    agenix.url = "github:ryantm/agenix";
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-23.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     agenix.url = "github:ryantm/agenix";
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-23.11";
@@ -85,7 +90,6 @@
 
     nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
       modules = [
-        #inputs.home-manager-2311.nixosModules.home-manager
         (import ./hosts/droid/configuration.nix {
           user = "mobrienv";
           inputs = inputs;
