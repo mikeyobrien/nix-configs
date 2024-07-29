@@ -3,10 +3,11 @@
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 {
   config,
-  lib,
   pkgs,
   ...
-}: {
+}: 
+
+{
   imports = [
     ../default.nix
     ./hardware-configuration.nix
@@ -17,10 +18,14 @@
 
   virtualisation.docker = {
     enable = true;
-    enableNvidia = true;
+    package = pkgs.docker_25;
   };
+  hardware.nvidia-container-toolkit.enable = true;
 
   #boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelParams = [
+    "i915.enable_guc=2"
+  ];
   boot.loader.grub.enable = true;
   boot.loader.grub.device = "/dev/vda"; # or "nodev" for efi only
 
@@ -33,11 +38,18 @@
   # workaround for autologin issue https://nixos.wiki/wiki/GNOME
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
+  
 
+  ## Weird issue where i686 was trying to be built: https://github.com/NixOS/nixpkgs/issues/241539
+  hardware.opengl.extraPackages32 = pkgs.lib.mkForce [ pkgs.linuxPackages_latest.nvidia_x11.lib32 ];
   hardware.opengl = {
     enable = true;
     driSupport = true;
     driSupport32Bit = true;
+    extraPackages = with pkgs; [
+      intel-media-driver
+      intel-compute-runtime
+    ];
   };
 
   services.xserver.videoDrivers = ["nvidia"];
@@ -122,18 +134,29 @@
   services.openssh.enable = true;
 
   networking.firewall.enable = false;
-  networking.firewall.allowedTCPPorts = [
-    22000
-    8384
-    3000
-    5000 # Frigate
-    8554 # rtsp?
-    11080 # Scrypted
-  ];
-  networking.firewall.allowedUDPPorts = [
-    8554
-    21027
-  ];
+  services.qemuGuest.enable = true;
+
+  age.secrets.influxdb_token.file = ../secrets/influxdb_token.age;
+  services.telegraf = {
+    enable = true;
+    extraConfig = { 
+      outputs.influxdb_v2 = {
+        urls = ["http://influxdb.home.arpa"];
+        token = "$INFLUXDB_TOKEN"; 
+        organization = "default";
+        bucket = "moss";
+      };
+      
+      inputs.nvidia_smi = {
+        bin_path = "/run/current-system/sw/bin/nvidia-smi";
+      };
+    };
+  };
+  systemd.services.telegraf = {
+    serviceConfig = {
+      EnvironmentFile = config.age.secrets.influxdb_token.path;
+    };
+  };
 
   fileSystems."/mnt/unraid" = {
     device = "unraid.local:/mnt/user/nixos";
@@ -147,7 +170,13 @@
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
 
-  fileSystems."/mnt/appdata" = {
+  fileSystems."/mnt/media" = {
+    device = "unraid.local:/mnt/user/media";
+    fsType = "nfs";
+    options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
+  };
+
+ fileSystems."/mnt/appdata" = {
     device = "unraid.local:/mnt/user/appdata";
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];

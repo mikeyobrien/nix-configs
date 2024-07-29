@@ -7,5 +7,6 @@ let
   ];
 in {
   "password.age".publicKeys = systems;
+  "influxdb_token.age".publicKeys = systems;
   "test.age".publicKeys = systems;
 }

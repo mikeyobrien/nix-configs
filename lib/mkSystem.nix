@@ -31,7 +31,6 @@ in
       outputs.nixosModules.proxmox
       inputs.agenix.nixosModules.default
       {
-        nixpkgs.config.allowUnfree = true;
         nixpkgs.overlays = [
           overlays.modifications
           overlays.additions
