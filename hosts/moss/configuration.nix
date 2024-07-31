@@ -141,8 +141,6 @@
     localNetworkGameTransfers.openFirewall = true;
   };
 
-  services.tailscale.enable = true;
-
   services.sunshine = {
     enable = true;
     capSysAdmin = true;
