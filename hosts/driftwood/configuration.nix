@@ -7,6 +7,10 @@
   ...
 }: 
 
+let
+  dockerCertsDir = "/etc/docker/certs";
+  clientCertsDir = "/etc/docker/client-certs";
+in
 {
   imports = [
     ../default.nix
@@ -18,8 +22,41 @@
 
   virtualisation.docker = {
     enable = true;
-    package = pkgs.docker_25;
+    package = pkgs.docker_26;
+    enableNvidia = true;
+    daemon.settings = {
+      hosts = [
+        "tcp://0.0.0.0:2375"
+      ];
+      tls = true;
+      tlscacert = "${dockerCertsDir}/ca.pem";
+      tlscert = "${dockerCertsDir}/server-cert.pem";
+      tlskey = "${dockerCertsDir}/server-key.pem";
+      tlsverify = true;
+    };
   };
+
+  # Generate Docker TLS certificates
+  system.activationScripts.dockerTLSCerts = ''
+    mkdir -p ${dockerCertsDir} ${clientCertsDir}
+    if [ ! -f ${dockerCertsDir}/ca.pem ]; then
+      ${pkgs.openssl}/bin/openssl genrsa -out ${dockerCertsDir}/ca-key.pem 4096
+      ${pkgs.openssl}/bin/openssl req -new -x509 -days 365 -key ${dockerCertsDir}/ca-key.pem -sha256 -out ${dockerCertsDir}/ca.pem -subj "/CN=dockerCA"
+      ${pkgs.openssl}/bin/openssl genrsa -out ${dockerCertsDir}/server-key.pem 4096
+      ${pkgs.openssl}/bin/openssl req -subj "/CN=$HOSTNAME" -sha256 -new -key ${dockerCertsDir}/server-key.pem -out ${dockerCertsDir}/server.csr
+      ${pkgs.openssl}/bin/openssl x509 -req -days 365 -sha256 -in ${dockerCertsDir}/server.csr -CA ${dockerCertsDir}/ca.pem -CAkey ${dockerCertsDir}/ca-key.pem -CAcreateserial -out ${dockerCertsDir}/server-cert.pem
+      chmod 0400 ${dockerCertsDir}/ca-key.pem ${dockerCertsDir}/server-key.pem
+      chmod 0444 ${dockerCertsDir}/ca.pem ${dockerCertsDir}/server-cert.pem
+    fi
+    if [ ! -f ${clientCertsDir}/key.pem ]; then
+      ${pkgs.openssl}/bin/openssl genrsa -out ${clientCertsDir}/key.pem 4096
+      ${pkgs.openssl}/bin/openssl req -subj '/CN=client' -new -key ${clientCertsDir}/key.pem -out ${clientCertsDir}/client.csr
+      ${pkgs.openssl}/bin/openssl x509 -req -days 365 -sha256 -in ${clientCertsDir}/client.csr -CA ${dockerCertsDir}/ca.pem -CAkey ${dockerCertsDir}/ca-key.pem -CAcreateserial -out ${clientCertsDir}/cert.pem
+      cp ${dockerCertsDir}/ca.pem ${clientCertsDir}/ca.pem
+      chmod 0400 ${clientCertsDir}/key.pem
+      chmod 0444 ${clientCertsDir}/cert.pem ${clientCertsDir}/ca.pem
+    fi
+  '';
   hardware.nvidia-container-toolkit.enable = true;
 
   #boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -41,7 +78,7 @@
   
 
   ## Weird issue where i686 was trying to be built: https://github.com/NixOS/nixpkgs/issues/241539
-  hardware.opengl.extraPackages32 = pkgs.lib.mkForce [ pkgs.linuxPackages_latest.nvidia_x11.lib32 ];
+  #hardware.opengl.extraPackages32 = pkgs.lib.mkForce [ pkgs.linuxPackages_latest.nvidia_x11.lib32 ];
   hardware.opengl = {
     enable = true;
     driSupport = true;
@@ -135,8 +172,12 @@
 
   networking.firewall.enable = false;
   services.qemuGuest.enable = true;
+  services.ttyd = {
+    enable = true;
+    writeable = true;
+  };
 
-  age.secrets.influxdb_token.file = ../secrets/influxdb_token.age;
+  age.secrets.influxdb_token.file = ../../secrets/influxdb_token.age;
   services.telegraf = {
     enable = true;
     extraConfig = { 
@@ -144,9 +185,13 @@
         urls = ["http://influxdb.home.arpa"];
         token = "$INFLUXDB_TOKEN"; 
         organization = "default";
-        bucket = "moss";
+        bucket = "${config.networking.hostName}";
       };
       
+      inputs.docker = {
+        endpoint = "unix:///var/run/docker.sock";
+      };
+
       inputs.nvidia_smi = {
         bin_path = "/run/current-system/sw/bin/nvidia-smi";
       };
@@ -156,6 +201,9 @@
     serviceConfig = {
       EnvironmentFile = config.age.secrets.influxdb_token.path;
     };
+  };
+  users.users.telegraf = {
+    extraGroups = [ "docker" ];
   };
 
   fileSystems."/mnt/unraid" = {
@@ -181,6 +229,13 @@
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
+
+  fileSystems."/mnt/ssd" = {   
+    device = "/dev/disk/by-uuid/033381e5-0f59-4451-b34a-eb3da13caaef";
+    fsType = "ext4";
+    options = [ "defaults" "noatime" ];
+  };
+  services.fstrim.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?
 }
