@@ -168,6 +168,11 @@
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
 
+  virtualisation = {
+    enable = true;
+    username = "mobrienv";
+  };
+
   services.flatpak.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?

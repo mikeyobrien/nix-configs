@@ -1,5 +1,7 @@
 {inputs, ...}: {
   # List your module files here
+  virtualisation = import ./virtualisation.nix;
+
   proxmox = {config, ...}: {
     imports = [
       inputs.nixos-generators.nixosModules.all-formats

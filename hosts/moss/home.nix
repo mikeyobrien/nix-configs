@@ -343,10 +343,7 @@
     text = ''
       #!/usr/bin/env bash
       swayidle -w \
-      timeout 300 '${pkgs.lgtv} --ssl screenOff' \
       timeout 900 'systemctl suspend' \
-      resume '${pkgs.lgtv} --ssl on' \
-      before-sleep '${pkgs.lgtv} --ssl off'
     '';
     executable = true;
   };

@@ -29,6 +29,8 @@ in
     inherit system;
     modules = [
       outputs.nixosModules.proxmox
+      outputs.nixosModules.virtualisation
+
       inputs.agenix.nixosModules.default
       {
         nixpkgs.overlays = [
