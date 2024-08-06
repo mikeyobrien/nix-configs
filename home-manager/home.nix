@@ -150,7 +150,7 @@
       gp = "git push";
       gs = "git status";
       gt = "git tag";
-      dpss="docker ps | less -S";
+      dpss = "docker ps | less -S";
       dc = "docker compose";
       dcu = "docker compose up";
       dcud = "docker compose up -d";
@@ -161,6 +161,10 @@
       dcpull = "docker compose pull";
       dcexec = "docker compose exec";
       dcrestart = "docker compose restart";
+      tn = "tmux new-session -s";
+      ta = "tmux attach -t";
+      tl = "tmux list-sessions";
+      tk = "tmux kill-session -t";
       ntfycmd = "curl -d \"success\" https://ntfy.mikeyobrien.com/testing || curl -d \"failure\" https://ntfy.mikeyobrien.com/testing";
       #emacs = "${pkgs.emacs-git}/Applications/Emacs.app/Contents/MacOS/Emacs";
     };
