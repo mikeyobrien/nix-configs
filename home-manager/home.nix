@@ -37,6 +37,7 @@
     tree
     lazygit
     glow
+    just
 
     # rust
     cargo
@@ -149,6 +150,17 @@
       gp = "git push";
       gs = "git status";
       gt = "git tag";
+      dpss="docker ps | less -S";
+      dc = "docker compose";
+      dcu = "docker compose up";
+      dcud = "docker compose up -d";
+      dcd = "docker compose down";
+      dcps = "docker compose ps";
+      dclogs = "docker compose logs";
+      dcbuild = "docker compose build";
+      dcpull = "docker compose pull";
+      dcexec = "docker compose exec";
+      dcrestart = "docker compose restart";
       ntfycmd = "curl -d \"success\" https://ntfy.mikeyobrien.com/testing || curl -d \"failure\" https://ntfy.mikeyobrien.com/testing";
       #emacs = "${pkgs.emacs-git}/Applications/Emacs.app/Contents/MacOS/Emacs";
     };
