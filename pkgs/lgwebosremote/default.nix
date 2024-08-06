@@ -1,26 +1,24 @@
 {
   lib,
-  pkgs,
-  python3Packages,
+  python311Packages,
   fetchFromGitHub,
-  fetchurl,
 }:
-python3Packages.buildPythonPackage rec {
+python311Packages.buildPythonPackage rec {
   pname = "lgtv";
   version = "0.1.2";
 
   src = fetchFromGitHub {
     owner = "klattimer";
     repo = "LGWebOsRemote";
-    rev = "183935b51c4885fcb1b08c9e4a18bbd261308c93";
-    hash = "sha256-uknbRRRIVqZ9OVmv7HgQwqOFRf1STWNbGLRpjLFX+Ek=";
+    rev = "616b35da0d939dbb9171d89ac6024e3fd9b85e2b";
+    hash = "sha256-bNcD7vWQYrgwRrV3cmHaE9h44NNJonX0EeSYvHc/5N4=";
   };
 
-  nativeBuildInputs = with python3Packages; [
+  nativeBuildInputs = with python311Packages; [
     pip
   ];
 
-  propagatedBuildInputs = with python3Packages; [
+  propagatedBuildInputs = with python311Packages; [
     wakeonlan
     ws4py
     requests
