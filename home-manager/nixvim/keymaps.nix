@@ -38,6 +38,11 @@
         key = "<leader>ce";
         action = "<cmd>lua vim.diagnostic.setqflist()<CR>";
       }
+      {
+        mode = "n";
+        key = "<leader>Y";
+        action = "[[\"+Y]]";
+      }
     ];
   };
 }

@@ -41,6 +41,9 @@ in {
       vimAlias = true;
       globals.mapleader = " ";
 
+      clipboard.providers.wl-copy.enable = true;
+      clipboard.register = "unnamedplus";
+
       opts = {
         timeoutlen = 500;
         number = true;

@@ -2,9 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 {
-  inputs,
   pkgs,
-  outputs,
   config,
   ...
 }: {
@@ -15,12 +13,6 @@
   nix.settings = {
     trusted-users = ["root" "mobrienv"];
     builders-use-substitutes = true;
-    # extra-substituters = [
-    #   "https://anyrun.nixos.org"
-    # ];
-    # extra-trusted-public-keys = [
-    #   "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
-    # ];
   };
   nix.extraOptions = ''
     experimental-features = nix-command flakes
@@ -65,18 +57,18 @@
   services.xserver.enable = true;
   services.xserver.videoDrivers = ["amdgpu"];
 
-  services.displayManager.sddm.enable = true;
+  services.displayManager = {
+    sddm.enable = true;
+  };
 
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
   };
 
-  # Optional: Enable the Hyprland helper services (these come from the Hyprland NixOS module)
   xdg.portal.enable = true;
   xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-hyprland];
 
-  # Optional: If you want to use native Wayland for Qt applications
   qt.platformTheme = "qt5ct";
   qt.style = "adwaita";
 

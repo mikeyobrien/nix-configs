@@ -192,6 +192,14 @@
     ];
   };
 
+  programs.zellij = {
+    enable = true;
+    enableFishIntegration = true;
+    settings = {
+      theme = "gruvbox-dark";
+    };
+  };
+
   programs.tmux = {
     enable = true;
     terminal = "screen-256color";

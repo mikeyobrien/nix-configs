@@ -13,11 +13,6 @@ in {
       default = "user";
       description = "The username of the user that will be added to the libvirtd group.";
     };
-    iommuParam = lib.mkOption {};
-      type = lib.types.str;
-      default = "amd_iommu=on";
-      description = "The kernal param to use for PCI passthrough one of amd_iommu=on or intel_iommu=on";
-    };
   };
   config = lib.mkIf cfg.enable {
     virtualisation.libvirtd.enable = true;
@@ -34,6 +29,6 @@ in {
     ];
 
     # Enable IOMMU (if you plan to use PCI passthrough)
-    boot.kernelParams = [cfg.kernalParams]; # Use "amd_iommu=on" for AMD CPUs
+    boot.kernelParams = ["amd_iommu=on"]; # Use "amd_iommu=on" for AMD CPUs
   };
 }

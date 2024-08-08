@@ -152,14 +152,17 @@
   };
 
   home.file = {
-    ".config/hypr/scripts/menu".text = ''
-      #!/usr/bin/env bash
-      if [[ ! $(pidof anyrun) ]]; then
-        anyrun
-      else
-        pkill anyrun
-      fi
-    '';
+    ".config/hypr/scripts/menu" = {
+      text = ''
+        #!/usr/bin/env bash
+        if [[ ! $(pidof anyrun) ]]; then
+          anyrun
+        else
+          pkill anyrun
+        fi
+      '';
+      executable = true;
+    };
   };
 
   # waybar
@@ -302,7 +305,7 @@
         };
 
         "custom/launcher" = {
-          format = "";
+          format = "  ";
           on-click = "$HOME/.config/hypr/scripts/menu";
         };
       }
