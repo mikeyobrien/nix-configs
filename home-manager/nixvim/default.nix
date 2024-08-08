@@ -22,8 +22,9 @@ in {
     ./copilot.nix
     ./lualine.nix
     ./harpoon.nix
-    #./treesitter.nix
+    ./treesitter.nix
     #./indentscope.nix
+    ./java.nix
   ];
 
   config = lib.mkIf cfg.enable {

@@ -43,6 +43,11 @@
         key = "<leader>Y";
         action = "[[\"+Y]]";
       }
+      {
+        mode = ["n" "v"];
+        key = "<leader>y";
+        action = "[[\"+y]]";
+      }
     ];
   };
 }
