@@ -34,6 +34,7 @@
     nixpkgs,
     nixos-generators,
     nix-on-droid,
+    home-manager,
     ...
   } @ inputs: let
     inherit (self) outputs;
@@ -74,17 +75,6 @@
       };
     };
 
-    # TODO move this to a lib helper
-    # homeConfigurations = {
-    #   "work" = home-manager.lib.homeManagerConfiguration {
-    #     pkgs = nixpkgs.legacyPackages.x86_64-linux; # Home-manager requires 'pkgs' instance
-    #     extraSpecialArgs = {inherit inputs outputs;};
-    #     modules = [
-    #       ./home-manager/home.nix
-    #     ];
-    #   };
-    # };
-
     nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
       modules = [
         (import ./hosts/droid/configuration.nix {
@@ -92,6 +82,16 @@
           inputs = inputs;
         })
       ];
+    };
+
+    homeConfigurations = {
+      "rainforest" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = { inherit inputs outputs; };
+        modules = [
+          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
+        ];
+      };
     };
   };
 }

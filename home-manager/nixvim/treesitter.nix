@@ -16,6 +16,7 @@
           };
           ensure_installed = [
             "vim"
+            "vimdoc"
             "regex"
             "lua"
             "bash"
@@ -23,6 +24,7 @@
             "markdown_inline"
             "javascript"
             "java"
+            "fish"
             "json"
             "diff"
             "tsx"

@@ -4,12 +4,20 @@
   lib,
   user,
   inputs,
+  outputs,
   ...
 }: {
   imports = [
     inputs.anyrun.homeManagerModules.default
     (import ./nixvim {inherit config lib inputs pkgs;})
   ];
+    nixpkgs.config.allowUnfree = true;
+    nixpkgs.overlays = [
+        outputs.overlays.modifications
+        outputs.overlays.additions
+        outputs.overlays.unstable-packages
+    ];
+
 
   home.packages = with pkgs; [
     firefox
@@ -44,7 +52,6 @@
     rustc
     rust-analyzer
     git-crypt
-    python3
     nodePackages.pyright
   ];
 
@@ -194,7 +201,7 @@
 
   programs.zellij = {
     enable = true;
-    enableFishIntegration = true;
+    #enableFishIntegration = true;
     settings = {
       theme = "gruvbox-dark";
     };
@@ -227,10 +234,33 @@
 
   programs.git = {
     enable = true;
-    userName = "mikeyobrien";
-    userEmail = "hmobrienv@gmail.com";
+    userName = "Mikey O'Brien";
+    userEmail = "me@mikeyobrien.com";
+    includes = [
+      {
+        condition = "gitdir:~/Code/";
+        contents = {
+          user = {
+            name = "Mikey O'Brien";
+            email = "me@mikeyobrien.com";
+          };
+        };
+      }
+      {
+        condition = "gitdir:~/workplace/";
+        contents = {
+          user = {
+            name = "Mikey O'Brien";
+            email = "mobrienv@amazon.com";
+          };
+        };
+      }
+    ];
+
     extraConfig = {
       safe.directory = ["*"];
+      core.editor = "vim";
+      color.ui = true;
     };
     aliases = {
       prettylog = "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(r) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative";
