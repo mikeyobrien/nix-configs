@@ -1,13 +1,18 @@
 function()
   local cmp = require('cmp')
-  local cmp_lsp = require('cmp_nvim_lsp')
-  local cmp_select = { behavior = cmp.SelectBehavior.Select }
+  local cmp_lsp = require("cmp_nvim_lsp")
   local capabilities = vim.tbl_deep_extend(
-    "force",
-    {},
-    vim.lsp.protocol.make_client_capabilities(),
-    cmp_lsp.default_capabilities())
+        "force",
+        {},
+        vim.lsp.protocol.make_client_capabilities(),
+        cmp_lsp.default_capabilities())
+
   require("fidget").setup({})
+
+  local cmp_select = { behavior = cmp.SelectBehavior.Select }
+
+  require'lspconfig'.tsserver.setup{}
+
   cmp.setup({
     snippet = {
       expand = function(args)
@@ -21,11 +26,10 @@ function()
       ["<C-Space>"] = cmp.mapping.complete(),
     }),
     sources = cmp.config.sources({
-      { name = "copilot", group_index = 2 }, -- make this configurable 
-      { name = 'nvim_lsp' },
+      { name = 'nvim_lsp', keyword_length = 1 },
+      { name = 'buffer', keyword_length = 2 },
+      { name = "copilot", group_index = 2 },
       { name = 'luasnip' }, -- For luasnip users.
-    }, {
-      { name = 'buffer' },
     })
   })
 

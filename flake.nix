@@ -116,7 +116,7 @@
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
-          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
+          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; currentSystem = "linux"; }) 
         ];
       };
       "wsl" = home-manager.lib.homeManagerConfiguration {

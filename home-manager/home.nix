@@ -235,7 +235,7 @@
     userEmail = "me@mikeyobrien.com";
     includes = [
       {
-        condition = "gitdir:~/Code/";
+        condition = "gitdir:~/code/";
         contents = {
           user = {
             name = "Mikey O'Brien";
@@ -244,7 +244,16 @@
         };
       }
       {
-        condition = "gitdir:~/workplace/";
+        condition = "gitdir:/workplace";
+        contents = {
+          user = {
+            name = "Mikey O'Brien";
+            email = "mobrienv@amazon.com";
+          };
+        };
+      }
+      {
+        condition = "gitdir:~/workplace";
         contents = {
           user = {
             name = "Mikey O'Brien";

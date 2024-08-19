@@ -75,6 +75,18 @@ in {
           lua-ls.enable = true;
         };
       };
+
+      extraConfigLuaPost = ''
+        -- For configurations that i'm testing before adding to nixVim
+        local file_path = vim.fn.stdpath("config") .. "/extraConfig.lua"
+        local config_file = io.open(file_path, "r")
+        if config_file then
+          dofile(file_path)
+          vim.g.extra_config_loaded = true
+        else
+          vim.g.extra_config_loaded = false
+        end
+      '';
     };
   };
 }
