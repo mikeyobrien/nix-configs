@@ -6,17 +6,18 @@
 }: name: {
   user,
   system,
+  isDarwin ? false,
   ...
 }: let
   systemTypeMap = {
     x86_64-linux = nixpkgs.lib.nixosSystem;
     x86_64-darwin = inputs.darwin.lib.darwinSystem;
-    aarm64-darwin = inputs.darwin.lib.darwinSystem;
+    aarch64-darwin = inputs.darwin.lib.darwinSystem;
   };
 
   home-managerMap = {
     x86_64-linux = inputs.home-manager.nixosModules.home-manager;
-    aarm64-darwin = inputs.home-manager.darwinModules;
+    aarch64-darwin = inputs.home-manager.darwinModules.home-manager;
   };
 
   getMapping = systemType: systemMap:
@@ -24,14 +25,15 @@
 
   systemFunc = getMapping system systemTypeMap;
   homeManagerModules = getMapping system home-managerMap;
+  extraNixosModules = if !isDarwin then [
+    outputs.nixosModules.proxmox
+    outputs.nixosModules.virtualisation
+    inputs.agenix.nixosModules.default
+  ] else [];
 in
   systemFunc rec {
     inherit system;
     modules = [
-      outputs.nixosModules.proxmox
-      outputs.nixosModules.virtualisation
-
-      inputs.agenix.nixosModules.default
       {
         nixpkgs.overlays = [
           overlays.modifications
@@ -47,8 +49,11 @@ in
         home-manager.useUserPackages = true;
         home-manager.users.${user} = ../hosts/${name}/home.nix;
         home-manager.extraSpecialArgs = {
+          currentSystem = system;
           user = user;
           inputs = inputs;
+      	  outputs = outputs;
+          isDarwin = isDarwin;
         };
       }
       {
@@ -60,5 +65,5 @@ in
           outputs = outputs;
         };
       }
-    ];
+    ] ++ extraNixosModules;
   }

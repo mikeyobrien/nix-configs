@@ -23,8 +23,9 @@ in {
     ./lualine.nix
     ./harpoon.nix
     ./treesitter.nix
+    ./lazygit.nix
     #./indentscope.nix
-    ./java.nix
+    #./java.nix
   ];
 
   config = lib.mkIf cfg.enable {

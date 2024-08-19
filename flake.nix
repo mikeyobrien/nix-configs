@@ -8,6 +8,11 @@
     home-manager.url = "github:nix-community/home-manager/release-24.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nixvim = {
       url = "github:nix-community/nixvim/nixos-24.05";
@@ -43,6 +48,7 @@
     mkSystem = import ./lib/mkSystem.nix {
       inherit nixpkgs inputs overlays outputs;
     };
+
     systems = [
       "aarch64-linux"
       "x86_64-linux"
@@ -72,6 +78,14 @@
       driftwood = mkSystem "driftwood" {
         user = "mobrienv";
         system = "x86_64-linux";
+      };
+    };
+
+    darwinConfigurations = {
+      rainforest = mkSystem "rainforest" {
+        user = "mobrienv";
+        system = "aarch64-darwin";
+        isDarwin = true;
       };
     };
 

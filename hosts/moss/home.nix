@@ -4,7 +4,10 @@
   inputs,
   ...
 }: {
-  imports = [../../home-manager/home.nix];
+  imports = [
+    inputs.anyrun.homeManagerModules.default
+    ../../home-manager/home.nix
+  ];
   home = {
     username = user;
     homeDirectory = "/home/${user}";
@@ -371,6 +374,8 @@
 
     discord
     google-chrome
+    obsidian
+    firefox
   ];
 
   editors.nixvim = {

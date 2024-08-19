@@ -2,57 +2,53 @@
   config,
   pkgs,
   lib,
-  user,
   inputs,
   outputs,
   ...
-}: {
+}: 
+
+{
   imports = [
-    inputs.anyrun.homeManagerModules.default
     (import ./nixvim {inherit config lib inputs pkgs;})
   ];
-    nixpkgs.config.allowUnfree = true;
-    nixpkgs.overlays = [
-        outputs.overlays.modifications
-        outputs.overlays.additions
-        outputs.overlays.unstable-packages
-    ];
+  nixpkgs.overlays = [
+      outputs.overlays.modifications
+      outputs.overlays.additions
+      outputs.overlays.unstable-packages
+  ];
 
-
-  home.packages = with pkgs; [
-    firefox
-    (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono" "DroidSansMono"];})
-    jq
-    fd
-    ripgrep
-    obsidian # knowledge management
-    cachix
-    babashka
-    lua
-    expect
-    htop
-    ripgrep
-    fzf
-    bat
-    nix-direnv
-    yadm
-    grc
-    tree-sitter
-    xsv
-    nodejs
-    pass
-    ispell
-    tree
-    lazygit
-    glow
-    just
+  home.packages = [
+    (pkgs.nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
+    pkgs.jq
+    pkgs.fd
+    pkgs.ripgrep
+    pkgs.cachix
+    pkgs.babashka
+    pkgs.lua
+    pkgs.expect
+    pkgs.htop
+    pkgs.ripgrep
+    pkgs.fzf
+    pkgs.bat
+    pkgs.nix-direnv
+    pkgs.yadm
+    pkgs.grc
+    pkgs.tree-sitter
+    pkgs.xsv
+    pkgs.nodejs
+    pkgs.pass
+    pkgs.ispell
+    pkgs.tree
+    pkgs.lazygit
+    pkgs.glow
+    pkgs.just
 
     # rust
-    cargo
-    rustc
-    rust-analyzer
-    git-crypt
-    nodePackages.pyright
+    pkgs.cargo
+    pkgs.rustc
+    pkgs.rust-analyzer
+    pkgs.git-crypt
+    pkgs.nodePackages.pyright
   ];
 
   programs.direnv.enable = true;

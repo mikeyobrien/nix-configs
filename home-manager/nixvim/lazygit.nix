@@ -22,7 +22,6 @@
         mode = "n";
         key = "<leader>gg";
         action = "<cmd>LazyGit<CR>";
-        description = "LazyGit";
       }
     ];
   };

@@ -4,6 +4,7 @@
   pkgs,
   ...
 }: {
+
   environment.systemPackages = [
     inputs.agenix.packages.${currentSystem}.default
     pkgs.unzip
