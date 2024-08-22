@@ -19,6 +19,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-wsl.url = "github:nix-community/NixOS-WSL";
+    nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
+
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -70,6 +73,12 @@
         system = "x86_64-linux";
       };
 
+      wsl = mkSystem "wsl" {
+        user = "mobrienv";
+        system =  "x86_64-linux";
+        isWsl = true;
+      };
+
       rhizome = mkSystem "rhizome" {
         user = "mobrienv";
         system = "x86_64-linux";
@@ -98,12 +107,20 @@
       ];
     };
 
+    # TODO: make lib helper `mkHome`
     homeConfigurations = {
       "rainforest" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
           (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
+        ];
+      };
+      "wsl" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = { inherit inputs outputs; };
+        modules = [
+          (import ./hosts/wsl/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
         ];
       };
     };

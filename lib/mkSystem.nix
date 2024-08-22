@@ -7,6 +7,7 @@
   user,
   system,
   isDarwin ? false,
+  isWsl ? false,
   ...
 }: let
   systemTypeMap = {
@@ -27,13 +28,19 @@
   homeManagerModules = getMapping system home-managerMap;
   extraNixosModules = if !isDarwin then [
     outputs.nixosModules.proxmox
-    outputs.nixosModules.virtualisation
+    #outputs.nixosModules.virtualisation
     inputs.agenix.nixosModules.default
   ] else [];
 in
   systemFunc rec {
     inherit system;
     modules = [
+      outputs.nixosModules.proxmox
+      outputs.nixosModules.virtualisation
+
+      (if isWsl then inputs.nixos-wsl.nixosModules.wsl else {})
+
+      inputs.agenix.nixosModules.default
       {
         nixpkgs.overlays = [
           overlays.modifications
@@ -54,6 +61,7 @@ in
           inputs = inputs;
       	  outputs = outputs;
           isDarwin = isDarwin;
+          isWsl = isWsl;
         };
       }
       {
