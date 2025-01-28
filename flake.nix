@@ -38,12 +38,14 @@
 
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
+
+    microvm.url = "github:astro/microvm.nix";
+    microvm.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
     self,
     nixpkgs,
-    nixos-generators,
     nix-on-droid,
     home-manager,
     ...
@@ -61,6 +63,7 @@
       "aarch64-darwin"
       "x86_64-darwin"
     ];
+
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
     # TODO Find out whats the advantage of setting these as outputs
@@ -88,6 +91,11 @@
       };
 
       driftwood = mkSystem "driftwood" {
+        user = "mobrienv";
+        system = "x86_64-linux";
+      };
+
+      reef = mkSystem "reef" {
         user = "mobrienv";
         system = "x86_64-linux";
       };

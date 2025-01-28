@@ -28,7 +28,7 @@
   homeManagerModules = getMapping system home-managerMap;
   extraNixosModules = if !isDarwin then [
     outputs.nixosModules.proxmox
-    #outputs.nixosModules.virtualisation
+    inputs.microvm.nixosModules.host
     inputs.agenix.nixosModules.default
   ] else [];
 in
