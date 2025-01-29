@@ -6,6 +6,7 @@
       ../default.nix
       ./hardware-configuration.nix
       ./guacamole.nix
+      ./k3s.nix
       # TODO: Add Cachix
     ];
 
