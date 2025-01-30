@@ -8,11 +8,11 @@
 
 buildPythonPackage rec {
   pname = "aider-chat";
-  version = "0.20.0";
+  version = "0.72.3";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-CP3V73yWSArRHBLUct4hrNMjWZlvaaUlkpm1QP66RWA=";  # This is a placeholder hash
+    hash = "sha256-OuUhORfFF0SmlnjgcWQJTOISPq3Uy4RCq4QB6UUIC/0=";
   };
 
   # do not run tests
