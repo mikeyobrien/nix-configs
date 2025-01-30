@@ -1,5 +1,8 @@
 #!/usr/bin/env nix-shell
 
+let
+  unstable = import (fetchTarball https://github.com/nixos/nixpkgs/archive/nixos-unstable.tar.gz) { };
+in
 { pkgs ? import <nixpkgs> { } }:
 
 (
@@ -8,7 +11,7 @@
     name = "FHS";
     targetPkgs = pkgs: (with pkgs; [
       gcc glibc zlib
-      aider-chat
+      unstable.aider-chat
       playwright
     ]);
     runScript = "fish";
