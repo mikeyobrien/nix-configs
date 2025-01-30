@@ -3,6 +3,7 @@
   buildPythonPackage,
   fetchPypi,
   setuptools,
+  setuptools-scm,
   wheel,
 }:
 
@@ -23,6 +24,11 @@ buildPythonPackage rec {
   pyproject = true;
   build-system = [
     setuptools
+    setuptools-scm
     wheel
+  ];
+
+  nativeBuildInputs = [
+    setuptools-scm
   ];
 }
