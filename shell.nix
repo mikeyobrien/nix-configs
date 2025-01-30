@@ -8,6 +8,8 @@
     name = "FHS";
     targetPkgs = pkgs: (with pkgs; [
       gcc glibc zlib
+      aider-chat
+      playwright
     ]);
     runScript = "fish";
     extraOutputsToInstall = [ "dev" ];
