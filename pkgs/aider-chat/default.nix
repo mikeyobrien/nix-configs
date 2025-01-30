@@ -11,8 +11,9 @@ buildPythonPackage rec {
   version = "0.72.3";
 
   src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-OuUhORfFF0SmlnjgcWQJTOISPq3Uy4RCq4QB6UUIC/0=";
+    inherit version;
+    pname = "aider_chat";
+    hash = "sha256-XwtN1g5dz41M8jpP1wn6wfUjorqgEk8fClUY0t/FnbA=";
   };
 
   # do not run tests
