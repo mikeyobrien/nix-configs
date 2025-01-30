@@ -5,6 +5,16 @@
   setuptools,
   setuptools-scm,
   wheel,
+  pip,
+  tqdm,
+  tree-sitter,
+  tree-sitter-languages,
+  typing-extensions,
+  urllib3,
+  watchfiles,
+  wcwidth,
+  yarl,
+  zipp,
 }:
 
 buildPythonPackage rec {
@@ -30,5 +40,18 @@ buildPythonPackage rec {
 
   nativeBuildInputs = [
     setuptools-scm
+  ];
+
+  propagatedBuildInputs = [
+    pip
+    tqdm
+    tree-sitter
+    tree-sitter-languages
+    typing-extensions
+    urllib3
+    watchfiles
+    wcwidth
+    yarl
+    zipp
   ];
 }
