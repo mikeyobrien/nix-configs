@@ -56,6 +56,9 @@
       pkgs.lua51Packages.lua
       pkgs.lua51Packages.luarocks
       pkgs.lua-language-server
+      pkgs.nodePackages.pyright
+      pkgs.stylua
+      pkgs.black
     ];
   };
 
