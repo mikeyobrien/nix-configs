@@ -54,6 +54,53 @@
 
   programs.direnv.enable = true;
   programs.gpg.enable = true;
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      # Add common dynamic libraries that programs might need
+      stdenv.cc.cc
+      openssl
+      curl
+      glib
+      util-linux
+      glibc
+      icu
+      zlib
+      nss
+      alsa-lib
+      at-spi2-atk
+      at-spi2-core
+      atk
+      cairo
+      cups
+      dbus
+      expat
+      fontconfig
+      freetype
+      gtk3
+      libdrm
+      libnotify
+      libpulseaudio
+      libuuid
+      xorg.libxcb
+      libxkbcommon
+      mesa
+      nspr
+      systemd
+      xorg.libX11
+      xorg.libXScrnSaver
+      xorg.libXcomposite
+      xorg.libXcursor
+      xorg.libXdamage
+      xorg.libXext
+      xorg.libXfixes
+      xorg.libXi
+      xorg.libXrandr
+      xorg.libXrender
+      xorg.libXtst
+      xorg.libxshmfence
+    ];
+  };
   programs.starship = {
     enable = true;
     settings = {
