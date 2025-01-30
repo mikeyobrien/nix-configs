@@ -15,6 +15,9 @@
   yarl,
   zipp,
   tokenizers,
+  soundfile,
+  soupsieve,
+  tiktoken,
 }:
 
 buildPythonPackage rec {
@@ -43,15 +46,18 @@ buildPythonPackage rec {
   ];
 
   propagatedBuildInputs = [
-    (pip.overridePythonAttrs (old: { version = "24.3.1"; }))
-    (tqdm.overridePythonAttrs (old: { version = "4.67.1"; }))
-    (tree-sitter.overridePythonAttrs (old: { version = "0.21.3"; }))
-    (typing-extensions.overridePythonAttrs (old: { version = "4.12.2"; }))
-    (urllib3.overridePythonAttrs (old: { version = "2.3.0"; }))
-    (watchfiles.overridePythonAttrs (old: { version = "1.0.4"; }))
+    (pip.overrideAttrs (old: { version = "24.3.1"; }))
+    (tqdm.overrideAttrs (old: { version = "4.67.1"; }))
+    (tree-sitter.overrideAttrs (old: { version = "0.21.3"; }))
+    (typing-extensions.overrideAttrs (old: { version = "4.12.2"; }))
+    (urllib3.overrideAttrs (old: { version = "2.3.0"; }))
+    (watchfiles.overrideAttrs (old: { version = "1.0.4"; }))
     wcwidth
-    (yarl.overridePythonAttrs (old: { version = "1.18.3"; }))
-    (zipp.overridePythonAttrs (old: { version = "3.21.0"; }))
+    (yarl.overrideAttrs (old: { version = "1.18.3"; }))
+    (zipp.overrideAttrs (old: { version = "3.21.0"; }))
     tokenizers
+    soundfile
+    soupsieve
+    tiktoken
   ];
 }
