@@ -8,7 +8,6 @@
   pip,
   tqdm,
   tree-sitter,
-  tree-sitter-languages,
   typing-extensions,
   urllib3,
   watchfiles,
@@ -46,7 +45,6 @@ buildPythonPackage rec {
     pip
     tqdm
     tree-sitter
-    tree-sitter-languages
     typing-extensions
     urllib3
     watchfiles
