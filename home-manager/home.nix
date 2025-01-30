@@ -49,8 +49,7 @@
     pkgs.rust-analyzer
     pkgs.git-crypt
     pkgs.nodePackages.pyright
-
-    pkgs.unstable.ghostty
+    pkgs.unstable.aider-chat.withPlaywright
   ];
 
   programs.direnv.enable = true;
