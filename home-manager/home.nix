@@ -52,7 +52,7 @@
 
   programs.neovim = {
     enable = true;
-    packages = pkgs.modifications.neovim;
+    package = pkgs.neovim;
     extraPackages = [
       pkgs.lua51Packages.lua
       pkgs.lua51Packages.luarocks
