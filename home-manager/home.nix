@@ -52,6 +52,7 @@
 
   programs.neovim = {
     enable = true;
+    packages = pkgs.modifications.neovim;
     extraPackages = [
       pkgs.lua51Packages.lua
       pkgs.lua51Packages.luarocks
@@ -59,6 +60,8 @@
       pkgs.nodePackages.pyright
       pkgs.stylua
       pkgs.black
+      pkgs.cargo
+      pkgs.nil
     ];
   };
 
