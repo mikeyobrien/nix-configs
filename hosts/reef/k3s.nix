@@ -11,10 +11,30 @@
     clusterInit = true;
     extraFlags = toString [
       "--disable=traefik"
+      "--write-kubeconfig-mode=660"
+      "--write-kubeconfig-group=users"
     ];
   };
 
-  hardware.opengl.driSupport32Bit = true;
-  hardware.nvidia-container-toolkit.enable = true;
-  environment.systemPackages = with pkgs; [ runc ];
+  virtualisation.docker = {
+    enable = true;
+  };
+
+  hardware = {
+    nvidia-container-toolkit.enable = true;
+    graphics = {
+      enable = true;
+      enable32Bit = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [ 
+    kubectl
+    kubernetes-helm
+    kubeseal
+    kustomize
+    kompose
+    runc
+    openiscsi
+  ];
 }

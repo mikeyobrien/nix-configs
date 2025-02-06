@@ -28,21 +28,30 @@
   boot.extraModprobeConfig = ''
     options vfio-pci ids=1b21:0612 
     options kvm_intel nested=1
+    options vfio_iommu_type1 allow_unsafe_interrupts=1
   '';
 
-  services.xserver.enable = true;
-  services.xserver.videoDrivers = ["nvidia"];
-  services.displayManager.sddm.enable = true;
-  services.displayManager = {
-    autoLogin.enable = true;
-    autoLogin.user = "mobrienv";
+  # Enable Graphics
+  hardware.graphics = {
+    enable = true;
   };
-  services.desktopManager.plasma6.enable = true;
+  services.xserver = {
+    enable = true;
+    videoDrivers = ["nvidia"];
+    
+    displayManager.gdm.enable = true;
+  };
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "mobrienv";
+
+    desktopManager.xfce.enable = true;
+  };
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.finegrained = false;
     nvidiaSettings = true;
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    package = config.boot.kernelPackages.nvidiaPackages.production;
   };
 
   networking.hostName = "reef"; # Define your hostname.
@@ -60,7 +69,7 @@
     };
   };
   
-  time.timeZone = "Americas/Chicago";
+  time.timeZone = "America/Chicago";
 
   i18n.defaultLocale = "en_US.UTF-8";
   services.pipewire = {
@@ -85,9 +94,22 @@
     wget
     curl
     git
+    xfce.thunar
+    xfce.xfce4-terminal
     pciutils
     usbutils
     tcpdump
+    argocd
+    terraform
+
+    (wrapHelm kubernetes-helm {
+        plugins = with pkgs.kubernetes-helmPlugins; [
+          helm-secrets
+          helm-diff
+          helm-s3
+          helm-git
+        ];
+      }) 
   ];
 
   programs.mtr.enable = true;
@@ -119,6 +141,35 @@
         };
       };    
     };
+  };
+
+  systemd.sleep.extraConfig = ''
+    AllowSuspend=no
+    AllowHibernation=no
+    AllowHybridSleep=no
+    AllowSuspendThenHibernate=no
+  '';
+
+  programs.nix-ld.enable = false;
+  programs.nix-ld.libraries = with pkgs; [
+    stdenv.cc.cc
+    zlib
+    libnvidia-container
+  ];
+
+  # NFS client configuration
+  services.rpcbind.enable = true;  # Required for NFS
+  fileSystems."/mnt/data" = {
+    device = "10.10.10.8:/mnt/user/data";
+    fsType = "nfs";
+    options = [ "defaults" "x-systemd.automount" "noatime" ];
+  };
+
+  services.sunshine = {
+    enable = true;
+    autoStart = true;
+    capSysAdmin = true;
+    openFirewall = true;
   };
 
   system.stateVersion = "24.11";
