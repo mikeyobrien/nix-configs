@@ -20,11 +20,10 @@
   services.xrdp.enable = true;
   services.xrdp.defaultWindowManager = "startplasma-x11";
 
-  services.caddy.virtualHosts."remote.nixos.lan".extraConfig = ''
-    tls internal
+  services.caddy.virtualHosts."localhost".extraConfig = ''
     handle_path /* {
       rewrite * /guacamole{path}
-      reverse_proxy nixos.lan:8080 {
+      reverse_proxy localhost:8080 {
          flush_interval -1
       }
     }
