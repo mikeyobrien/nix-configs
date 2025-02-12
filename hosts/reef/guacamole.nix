@@ -21,8 +21,7 @@
   services.xrdp.defaultWindowManager = "startplasma-x11";
 
   services.caddy.virtualHosts."localhost".extraConfig = ''
-    handle_path /* {
-      rewrite * /guacamole{path}
+    handle /* {
       reverse_proxy localhost:8080 {
          flush_interval -1
       }
