@@ -15,5 +15,9 @@
     '';
   };
 
+  fonts.packages = with pkgs; [
+    (pkgs.nerdfonts.override { fonts = [ "FiraCode" "NerdFontsSymbolsOnly" ]; })
+  ];
+
   system.stateVersion = "23.05";
 }
