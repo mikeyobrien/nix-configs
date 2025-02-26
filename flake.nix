@@ -35,6 +35,9 @@
 
     anyrun.url = "github:anyrun-org/anyrun";
     anyrun.inputs.nixpkgs.follows = "nixpkgs";
+
+    emacs-overlay.url = "github:nix-community/emacs-overlay";
+    emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -64,7 +67,7 @@
     packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
     nixosModules = import ./modules/nixos {inherit inputs;};
-    homeManagerModules = import ./modules/home-manager;
+    homeManagerModules = import ./modules/home-manager {inherit inputs;};
     overlays = overlays;
 
     nixosConfigurations = {

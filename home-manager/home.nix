@@ -49,6 +49,8 @@
     pkgs.rust-analyzer
     pkgs.git-crypt
     pkgs.nodePackages.pyright
+
+    pkgs.unstable.ghostty
   ];
 
   programs.direnv.enable = true;
@@ -177,7 +179,6 @@
       (builtins.readFile ./fish.config)
       "set -g SHELL ${pkgs.fish}/bin/fish"
       "set -gx PATH $PATH $HOME/bin"
-      "set -g NIX_LD $(nix eval --impure --raw --expr 'let pkgs = import <nixpkgs> {}; NIX_LD = pkgs.lib.fileContents \"${pkgs.stdenv.cc}/nix-support/dynamic-linker\"; in NIX_LD')"
     ]);
     plugins = [
       {
