@@ -5,10 +5,10 @@ with lib;
 
 let
   cfg = config.modules.llm;
-  pyWithLlm = (
-    unstable.python313Packages.llm
-    unstable.python313Packages.llm-ollama
-  );
+  pyWithLlm = unstable.python311.withPackages (ps: with ps; [
+    llm
+    llm-ollama
+  ]);
   llm-with-plugins = (
     pkgs.writeShellScriptBin "llm" ''
       exec ${pyWithLlm}/bin/llm "$@"
