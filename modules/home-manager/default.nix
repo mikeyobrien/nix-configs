@@ -3,4 +3,5 @@
 {
   # List your module files here
   emacs = import ./emacs.nix;
+  llm = import ./llm.nix;
 }

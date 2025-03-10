@@ -2,8 +2,9 @@
 {inputs, ...}: {
   additions = final: _prev: import ../pkgs final.pkgs;
 
+  # this will replace the package referenced at pkg.<package>
   modifications = final: prev: {
-    neovim = inputs.neovim-nightly-overlay.overlays.default;
+    neovim = inputs.neovim-nightly-overlay.packages.${final.system}.default;
   };
 
   unstable-packages = final: _prev: {

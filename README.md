@@ -10,3 +10,5 @@
 
 Note: on WSL had some weird issues, after multiple retries they went away.
 
+
+Based off https://github.com/ryan4yin/nix-config and https://github.com/Misterio77/nix-starter-configs

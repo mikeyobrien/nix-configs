@@ -10,12 +10,14 @@
 {
   imports = [
     (import ./nixvim {inherit config lib inputs pkgs;})
+    (import ./llm.nix {inherit config lib inputs pkgs;})
   ];
   nixpkgs.overlays = [
       outputs.overlays.modifications
       outputs.overlays.additions
       outputs.overlays.unstable-packages
   ];
+
   home.packages = [
     (pkgs.nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
     pkgs.jq
