@@ -12,4 +12,5 @@ in {
   "influxdb_token.age".publicKeys = systems;
   "test.age".publicKeys = systems;
   "k3s_secret.age".publicKeys = systems;
+  "frigate.age".publicKeys = [reef];
 }

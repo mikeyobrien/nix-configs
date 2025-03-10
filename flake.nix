@@ -2,10 +2,10 @@
   description = "mikeyobrien's nix config flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    home-manager.url = "github:nix-community/home-manager/release-24.05";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     darwin = {
@@ -15,7 +15,7 @@
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nixvim = {
-      url = "github:nix-community/nixvim/nixos-24.05";
+      url = "github:nix-community/nixvim/nixos-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -41,6 +41,9 @@
 
     microvm.url = "github:astro/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
+
+    jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
+    jovian.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
