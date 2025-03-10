@@ -1,5 +1,7 @@
-{user, ...}: {
-  imports = [../../home-manager/home.nix];
+{user, microvm, pkgs, ...}: {
+  imports = [
+    ../../home-manager/home.nix
+  ];
   home = {
     username = user;
     homeDirectory = "/home/${user}";
@@ -13,7 +15,8 @@
   };
 
   editors.nixvim = {
-    enable = true;
-    lazyPlugins.copilot.enable = true;
+    enable = false;
+    lazyPlugins.copilot.enable = false;
   };
+
 }

@@ -1,17 +1,32 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, outputs, ... }:
 
-{
+{  
   imports =
     [ 
       ../default.nix
       ./hardware-configuration.nix
       ./guacamole.nix
       ./k3s.nix
-      # TODO: Add Cachix
+      # TODO: Unable to initialize capture methodAdd Cachix
     ];
-
+  
   nixpkgs.config.allowUnfree = true;
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nixpkgs.overlays = [
+      outputs.overlays.modifications
+      outputs.overlays.additions
+      outputs.overlays.unstable-packages
+  ];
+
+  nix.settings = {
+    experimental-features = ["nix-command" "flakes"];
+    trusted-users = ["root" "mobrienv"];
+    substituters = [
+      "https://cuda-maintainers.cachix.org"
+    ];
+    trusted-public-keys = [
+      "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+    ];
+  };
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -35,18 +50,13 @@
   hardware.graphics = {
     enable = true;
   };
+
+  nixpkgs.config.nvidia.acceptLicense = true;
   services.xserver = {
     enable = true;
     videoDrivers = ["nvidia"];
-    
-    displayManager.gdm.enable = true;
   };
-  services.displayManager.autoLogin = {
-    enable = true;
-    user = "mobrienv";
 
-    desktopManager.xfce.enable = true;
-  };
   hardware.nvidia = {
     modesetting.enable = true;
     powerManagement.finegrained = false;
@@ -90,6 +100,7 @@
   };
 
   environment.systemPackages = with pkgs; [
+    gcc
     vim 
     wget
     curl
@@ -101,15 +112,7 @@
     tcpdump
     argocd
     terraform
-
-    (wrapHelm kubernetes-helm {
-        plugins = with pkgs.kubernetes-helmPlugins; [
-          helm-secrets
-          helm-diff
-          helm-s3
-          helm-git
-        ];
-      }) 
+    mangohud
   ];
 
   programs.mtr.enable = true;
@@ -166,10 +169,25 @@
   };
 
   services.sunshine = {
+    package = pkgs.unstable.sunshine;
     enable = true;
     autoStart = true;
     capSysAdmin = true;
     openFirewall = true;
+  };
+
+  # VMs
+  microvm.vms = {
+    bastion = {
+      config = {
+        microvm.shares = [{
+          source = "/nix/store";
+          mountPoint = "/nix/.ro-store";
+          tag = "ro-store";
+          proto = "virtiofs";
+        }];
+      };
+    };
   };
 
   system.stateVersion = "24.11";
