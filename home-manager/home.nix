@@ -41,27 +41,39 @@
     pkgs.glow
     pkgs.just
 
-    # rust
-    pkgs.cargo
-    pkgs.rustc
-    pkgs.rust-analyzer
-    pkgs.git-crypt
-    pkgs.nodePackages.pyright
+    pkgs.playwright
+    pkgs.python3Packages.playwright
     pkgs.unstable.aider-chat.withPlaywright
+    pkgs.nil
+    pkgs.devenv
   ];
 
   programs.neovim = {
     enable = true;
-    package = pkgs.modifications.neovim;
+    package = pkgs.neovim;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
+    vimdiffAlias = true;
+    
+    extraWrapperArgs = [
+      "--suffix"
+      "LIBRARY_PATH"
+      ":"
+      "''${lib.makeLibraryPath [ pkgs.stdenv.cc.cc pkgs.zlib ]}"
+      "--suffix"
+      "PKG_CONFIG_PATH"
+      ":"
+      "''${lib.makeSearchPathOutput "dev" "lib/pkgconfig" [ pkgs.stdenv.cc.cc pkgs.zlib ]}"
+    ];
+
     extraPackages = [
       pkgs.lua51Packages.lua
       pkgs.lua51Packages.luarocks
       pkgs.lua-language-server
-      pkgs.nodePackages.pyright
       pkgs.stylua
       pkgs.black
       pkgs.cargo
-      pkgs.nil
     ];
   };
 
@@ -183,6 +195,8 @@
       ta = "tmux attach -t";
       tl = "tmux list-sessions";
       tk = "tmux kill-session -t";
+      kgp = "kubectl get pods";
+      aas = "argocd app sync";
       ntfycmd = "curl -d \"success\" https://ntfy.mikeyobrien.com/testing || curl -d \"failure\" https://ntfy.mikeyobrien.com/testing";
       #emacs = "${pkgs.emacs-git}/Applications/Emacs.app/Contents/MacOS/Emacs";
     };

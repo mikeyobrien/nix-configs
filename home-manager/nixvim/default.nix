@@ -32,7 +32,6 @@ in {
     home.shellAliases.v = "nvim";
     programs.nixvim = {
       enable = true;
-      package = inputs.neovim-nightly-overlay.packages.${pkgs.system}.default;
 
       colorschemes.tokyonight.enable = true;
       colorschemes.tokyonight.settings.integrations.treesitter = true;
