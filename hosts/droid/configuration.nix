@@ -75,7 +75,7 @@ in {
   terminal.font = "${pkgs.terminus_font_ttf}/share/fonts/truetype/TerminusTTF.ttf";
 
   # Read the changelog before changing this value
-  system.stateVersion = "23.11";
+  system.stateVersion = "24.05";
 
   # Set up nix for flakes
   nix.extraOptions = ''
