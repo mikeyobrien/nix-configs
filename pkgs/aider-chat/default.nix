@@ -109,6 +109,10 @@ let
       tqdm
       tree-sitter
       tree-sitter-languages
+      tree-sitter-c-sharp
+      tree-sitter-embedded-template
+      tree-sitter-language-pack
+      tree-sitter-yaml
       typing-extensions
       urllib3
       watchfiles
