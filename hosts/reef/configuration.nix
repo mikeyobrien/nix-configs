@@ -7,6 +7,7 @@
       ./hardware-configuration.nix
       ./guacamole.nix
       ./k3s.nix
+      ./microvm.nix
       # TODO: Unable to initialize capture methodAdd Cachix
     ];
   
@@ -65,7 +66,31 @@
   };
 
   networking.hostName = "reef"; # Define your hostname.
-  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+  networking.useNetworkd = true;
+  systemd.network.enable = true;
+  systemd.network.networks."10-lan" = {
+    matchConfig.Name = ["enp5s0" "vm-*"];
+    networkConfig = {
+      Bridge = "br0";
+    };
+  };
+
+  systemd.network.netdevs."br0" = {
+    netdevConfig = {
+      Name = "br0";
+      Kind = "bridge";
+    };
+  };
+
+  systemd.network.networks."10-lan-bridge" = {
+    matchConfig.Name = "br0";
+    networkConfig = {
+      Address = ["10.10.11.39/23"];
+      Gateway = "10.10.10.1";
+      DNS = ["10.10.10.1"];
+    };
+    linkConfig.RequiredForOnline = "routable";
+  };
 
   networking = {
     bridges = {
@@ -74,7 +99,7 @@
       };
     };
     interfaces = {
-      br0.useDHCP = true;
+      br0.useDHCP = false;
       enp5s0.useDHCP = false;
     };
   };
@@ -112,7 +137,6 @@
     tcpdump
     argocd
     terraform
-    mangohud
   ];
 
   programs.mtr.enable = true;
@@ -176,19 +200,6 @@
     openFirewall = true;
   };
 
-  # VMs
-  microvm.vms = {
-    bastion = {
-      config = {
-        microvm.shares = [{
-          source = "/nix/store";
-          mountPoint = "/nix/.ro-store";
-          tag = "ro-store";
-          proto = "virtiofs";
-        }];
-      };
-    };
-  };
 
   system.stateVersion = "24.11";
 }

@@ -7,8 +7,6 @@
     homeDirectory = "/home/${user}";
   };
 
-  modules.llm.enable = true;
-
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
       autoconnect = ["qemu:///system"];

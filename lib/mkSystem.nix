@@ -26,6 +26,7 @@
 
   systemFunc = getMapping system systemTypeMap;
   homeManagerModules = getMapping system home-managerMap;
+
   extraNixosModules = if !isDarwin then [
     outputs.nixosModules.proxmox
     inputs.microvm.nixosModules.host
@@ -37,21 +38,18 @@ in
     modules = [
       outputs.nixosModules.proxmox
       outputs.nixosModules.virtualisation
-
       (if isWsl then inputs.nixos-wsl.nixosModules.wsl else {})
-
       inputs.agenix.nixosModules.default
+      ../hosts/${name}/configuration.nix
+
+      homeManagerModules
       {
         nixpkgs.overlays = [
           overlays.modifications
           overlays.additions
           overlays.unstable-packages
         ];
-      }
 
-      ../hosts/${name}/configuration.nix
-      homeManagerModules
-      {
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users.${user} = ../hosts/${name}/home.nix;
@@ -64,6 +62,7 @@ in
           isWsl = isWsl;
         };
       }
+
       {
         config._module.args = {
           currentSystemName = name;

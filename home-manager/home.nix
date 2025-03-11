@@ -4,13 +4,14 @@
   lib,
   inputs,
   outputs,
+  user,
   ...
 }: 
 
 {
   imports = [
     (import ./nixvim {inherit config lib inputs pkgs;})
-    (import ./llm.nix {inherit config lib inputs pkgs;})
+    (import ./llm.nix)
   ];
   nixpkgs.overlays = [
       outputs.overlays.modifications
@@ -43,12 +44,11 @@
     pkgs.glow
     pkgs.just
 
-    pkgs.playwright
-    pkgs.python3Packages.playwright
-    pkgs.unstable.aider-chat.withPlaywright
     pkgs.nil
     pkgs.devenv
   ];
+
+  llm-tools.enable = true;
 
   programs.neovim = {
     enable = true;

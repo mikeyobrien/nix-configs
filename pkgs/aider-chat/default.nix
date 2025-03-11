@@ -6,6 +6,9 @@
   gitMinimal,
   portaudio,
   playwright-driver,
+  # Add parameters with defaults
+  version,
+  src,
 }:
 
 let
@@ -13,18 +16,10 @@ let
     self = python3;
     packageOverrides = _: super: { tree-sitter = super.tree-sitter_0_21; };
   };
-  version = "0.76.0";
   aider-chat = python3.pkgs.buildPythonPackage {
     pname = "aider-chat";
-    inherit version;
+    inherit version src;
     pyproject = true;
-
-    src = fetchFromGitHub {
-      owner = "Aider-AI";
-      repo = "aider";
-      tag = "v${version}";
-      hash = "sha256-PbsUNueLXj5WZW8lc+t3cm+ftKWcllYtE2CAsZhuK/s=";
-    };
 
     pythonRelaxDeps = true;
 
@@ -109,10 +104,6 @@ let
       tqdm
       tree-sitter
       tree-sitter-languages
-      tree-sitter-c-sharp
-      tree-sitter-embedded-template
-      tree-sitter-language-pack
-      tree-sitter-yaml
       typing-extensions
       urllib3
       watchfiles
