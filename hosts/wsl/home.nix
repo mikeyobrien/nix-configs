@@ -2,6 +2,7 @@
   imports = [
     ../../home-manager/home.nix
     ../../modules/home-manager/emacs.nix
+    ../../modules/home-manager/uvx.nix
   ];
 
   home = {
@@ -18,5 +19,6 @@
   };
 
   modules.editors.emacs.enable = true;
+  modules.uvx.enable = true;
  
 }

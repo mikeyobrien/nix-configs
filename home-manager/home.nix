@@ -13,6 +13,7 @@
     (import ./nixvim {inherit config lib inputs pkgs;})
     (import ./llm.nix)
   ];
+
   nixpkgs.overlays = [
       outputs.overlays.modifications
       outputs.overlays.additions
