@@ -106,7 +106,6 @@ The configuration uses a modular, composable architecture that allows for flexib
 
 #### Editor Modules (`modules.editors.*`)
 - `neovim`: Neovim configuration
-- `nixvim`: NixVim configuration (placeholder)
 - `emacs`: Emacs configuration
 
 #### Shell Modules (`modules.shells.*`)

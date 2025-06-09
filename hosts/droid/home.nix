@@ -6,11 +6,6 @@
   ...
 }: {
   imports = [../../home-manager/home.nix];
-  modules.editors.nixvim = {
-    enable = true;
-    lazyPlugins.copilot.enable = true;
-  };
-
   home.activation = {
     copyFont = let
       font_src = "${pkgs.nerdfonts.override {fonts = ["FiraCode"];}}/share/fonts/truetype/NerdFonts/FiraCodeNerdFontMono-Regular.ttf";

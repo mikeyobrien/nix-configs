@@ -1,178 +1,161 @@
-# nix-configs Project
+# CLAUDE.md
 
-## Quick Reference: g14 Rebuild
-
-```bash
-home-manager switch --flake .#g14 --extra-experimental-features "nix-command flakes"
-```
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Repository Overview
-
-Modular Nix configuration repository supporting NixOS, Darwin (macOS), WSL, and Nix-on-Droid. Architecture emphasizes composability through a minimal base configuration that hosts extend additively.
+- Modular Nix configuration repository covering NixOS, macOS (nix-darwin), WSL, Nix-on-Droid, and microVM environments.
+- Hosts currently managed: moss, wsl, rhizome, driftwood, reef, rainforest, studio, coral, g14, droid.
+- Home Manager delivers user profiles; agenix handles secrets; `just` scripts wrap frequent workflows.
 
 ## Key Commands
-
-### Building and Activating Configurations
-
+### System & Home Management
 ```bash
-# Home Manager (primary workflow)
-home-manager switch --flake .#<hostname>
-home-manager switch --flake .#<hostname> -b backup  # Backup conflicting files
-home-manager switch --flake .#g14 --extra-experimental-features "nix-command flakes"
+sudo nixos-rebuild switch --flake .#<hostname>         # NixOS switch
+sudo nixos-rebuild test --flake .#<hostname>           # NixOS dry run
+sudo nixos-rebuild build --flake .#<hostname>          # Build only
 
-# NixOS systems
-sudo nixos-rebuild switch --flake .#<hostname>
-sudo nixos-rebuild test --flake .#<hostname>    # Test without switching
+darwin-rebuild switch --flake .#rainforest             # macOS switch
 
-# Darwin (macOS)
-darwin-rebuild switch --flake .#rainforest
+nix build .#homeConfigurations.<host>.activationPackage
+./result/activate                                      # Apply Home Manager build
+home-manager switch --flake .#<host> [-b backup]       # Alternative HM apply
 
-# Manual activation
-nix build .#homeConfigurations.<hostname>.activationPackage
-./result/activate
-
-# Allow unfree packages when needed:
-NIXPKGS_ALLOW_UNFREE=1 nix build ... --impure
+nix build .#images.<image>                             # Build VM images
 ```
 
-### Development Commands
-
+### Development Flow
 ```bash
-# Format all Nix files (uses alejandra)
-nix fmt
-
-# Update flake inputs
-nix flake update
-nix flake lock --update-input <input-name>
-
-# Check flake
-nix flake check
-nix flake show
-
-# Search packages
-nix search nixpkgs <package>
-
-# Test module changes safely
+nix fmt                                                # Format Nix files (alejandra)
+nix flake check                                        # Evaluate flake + checks
+nix flake update                                       # Refresh all inputs
+nix flake lock --update-input <name>                   # Update specific input
+nix search nixpkgs <package>                           # Package search
 nix build .#homeConfigurations.<host>.activationPackage --dry-run
 ```
 
-## Architecture Patterns
+### Just Commands
+```bash
+just switch-driftwood
+just switch-reef
+```
 
-### Module System
+## Architecture
+### Directory Structure
+- `hosts/`: Host-specific NixOS, Darwin, WSL, and Droid configs (`configuration.nix`, `home.nix`).
+- `home-manager/`: Shared base and helper modules (`home.nix`, `llm.nix`).
+- `modules/`: Reusable NixOS and Home Manager modules grouped by domain.
+- `pkgs/`: Custom derivations; `overlays/`: package overlays.
+- `lib/`: Helper functions such as `mkSystem.nix`.
+- `scripts/`, `tests/`, `monitoring/`, `microvms/`: Operational tooling.
+- `secrets/`: Age-encrypted blobs managed with agenix.
 
-All modules follow this pattern under the `modules.*` namespace:
-
+### Module System Pattern
 ```nix
 { config, lib, pkgs, ... }:
 with lib;
-let
-  cfg = config.modules.<category>.<modulename>;
+let cfg = config.modules.<category>.<name>;
 in {
-  options.modules.<category>.<modulename> = {
+  options.modules.<category>.<name> = {
     enable = mkEnableOption "description";
-    # Additional options...
+    # additional options ...
   };
-  
+
   config = mkIf cfg.enable {
-    # Implementation
+    # implementation
   };
 }
 ```
 
-Module categories:
-- `modules.core.*` - Essential packages (essential, commonCli, fonts, packages)
-- `modules.development.*` - Dev tools (git, direnv, gpg, languages, tools, uvx)
-- `modules.editors.*` - Editors (neovim, emacs, nixvim)
-- `modules.shells.*` - Shells (bash, fish, prompts)
-- `modules.terminal.*` - Terminal tools (alacritty, tmux, zellij)
-- `modules.profiles.*` - Pre-configured combinations
+Module categories include:
+- `modules.core.*` – essential packages, CLI tooling, fonts.
+- `modules.development.*` – language tooling, git, direnv, uvx.
+- `modules.editors.*` – editor-related modules (neovim, emacs).
+- `modules.shells.*` – shell defaults, prompts.
+- `modules.terminal.*` – tmux, zellij, terminal utilities.
+- `modules.profiles.*` – opinionated bundles such as `cli-developer`.
+- `modules.llm` – LLM tooling shared across hosts.
 
 ### Host Configuration Pattern
-
 ```nix
 { user, lib, ... }: {
   imports = [
-    ../../home-manager/home.nix  # Minimal base (essential packages + fish)
-    # Optionally add profiles:
-    # ../../modules/home-manager/profiles/cli-developer.nix
+    ../../home-manager/home.nix
+    # optional profiles, e.g. outputs.homeManagerModules.profiles.cli-developer
   ];
-  
+
   home = {
     username = user;
-    homeDirectory = "/home/${user}";
+    homeDirectory = "/home/${user}"; # override for darwin with mkForce
   };
-  
-  # Enable modules additively
+
   modules.core.commonCli.enable = true;
   modules.development.git.enable = true;
-  
-  # Override defaults with mkForce
-  modules.shells.fish.enable = lib.mkForce false;
+  modules.shells.fish.enable = lib.mkForce false; # example override
 }
 ```
 
-### Adding New Components
+### Host Types
+- **Standard NixOS**: moss, rhizome, reef, driftwood.
+- **Servers / MicroVM**: reef hosts virtualization helpers, dev microVM profile under `microvms/`.
+- **WSL**: Tailored Home Manager tweaks for Windows Subsystem.
+- **Darwin**: rainforest, studio use nix-darwin with Home Manager.
+- **Android**: Nix-on-Droid configuration under `hosts/droid/`.
 
-**New Host:**
-1. Create `hosts/<hostname>/home.nix` following the pattern above
-2. Add to `flake.nix`:
-   ```nix
-   homeConfigurations.<hostname> = home-manager.lib.homeManagerConfiguration {
-     pkgs = nixpkgs.legacyPackages.x86_64-linux;
-     extraSpecialArgs = { inherit inputs outputs; };
-     modules = [(import ./hosts/<hostname>/home.nix { user = "<username>"; lib = nixpkgs.lib; })];
-   };
-   ```
+## Composition Guidelines
+- Base `home-manager/home.nix` remains intentionally minimal: essential packages plus fish/prompt defaults.
+- Hosts enable additional modules or profiles explicitly; prefer additive composition over bespoke configs.
+- Use `lib.mkForce` sparingly for host-specific overrides.
+- Profiles bundle common stacks (`cli-developer`, `desktop-user`, etc.).
 
-**New Module:**
-1. Create `modules/home-manager/<category>/<modulename>.nix`
-2. Import in `modules/home-manager/<category>/default.nix`
-3. Ensure category is imported in `modules/home-manager/default.nix`
+## Testing & Workflow Notes
+1. Build target configuration: `nix build .#homeConfigurations.<host>.activationPackage`.
+2. Apply or test on relevant hosts (e.g., `sudo nixos-rebuild test`).
+3. Run formatters (`nix fmt`) before commit.
+4. Dry-run risky changes (`--dry-run`, `home-manager switch -b backup`).
 
-## Important Conventions
+## Known Issues & Workarounds
+- `devenv` builds can fail; module kept disabled until flake channel resolves.
+- WSL setup occasionally needs multiple activation attempts; rerun `nixos-rebuild` if first run flakes.
+- Use `home-manager switch -b backup` when touching dotfiles to keep automatic backups.
 
-1. **File Headers**: Every Nix file should start with:
-   ```nix
-   # ABOUTME: Brief description of what this file does
-   # ABOUTME: Second line if needed
-   ```
+## Git Workflow
+This repository uses a local-first git workflow without PRs:
+1. Create feature branches for development work.
+2. When ready to merge:
+   - Rebase the feature branch onto `main`.
+   - Squash commits into a single descriptive commit (interactive rebase or soft reset both fine).
+   - Merge directly into `main` (`--ff-only`) and delete the feature branch.
 
-2. **Minimal Base**: The base configuration (`home-manager/home.nix`) only includes:
-   - Essential packages (`modules.core.essential`)
-   - Fish shell with prompts
-   - Basic Home Manager setup
+Example:
+```bash
+# Create feature branch
+git checkout -b my-feature
 
-3. **Additive Composition**: Hosts build on top of the minimal base by enabling additional modules or importing profiles.
+# ... make changes and commits ...
 
-4. **Profile Usage**: Use profiles for common configurations:
-   - `cli-developer`: Development tools without GUI
-   - `desktop-user`: GUI applications
-   - `full-developer`: Complete development environment
+# Prepare to merge
+git checkout my-feature
+# Option A: interactive rebase
+git rebase -i main
+# Option B: soft reset approach
+git reset --soft main
+git commit -m "Comprehensive commit message
 
-5. **Platform Detection**: Use provided flags:
-   - `isDarwin` for macOS-specific config
-   - `isWsl` for WSL-specific config
+Detailed description of all changes..."
 
-## Known Issues and Workarounds
+# Fast-forward merge
+git checkout main
+git merge my-feature --ff-only
 
-1. **devenv**: Currently disabled in `modules/home-manager/development/tools.nix` and `modules/home-manager/core/packages.nix` due to build issues
+git branch -d my-feature
+```
 
-2. **WSL**: May require multiple retries during initial setup
+## Secrets & Security
+- Manage secrets exclusively via agenix; edit with `agenix -e` and keep blobs in `secrets/*.age`.
+- Avoid storing plaintext secrets or bypassing commit hooks.
 
-3. **File Conflicts**: Use `home-manager switch -b backup` to automatically backup conflicting files
-
-## Testing Workflow
-
-Before pushing changes:
-1. Build the configuration: `nix build .#homeConfigurations.<host>.activationPackage`
-2. Test on relevant hosts
-3. Run formatter: `nix fmt`
-4. Verify no module conflicts with dry-run
-
-## Module Interactions
-
-- Base provides minimal environment
-- Profiles combine multiple modules
-- Hosts can override any default with `lib.mkForce`
-- Modules are independent and can be enabled individually
-- Some modules have interdependencies (documented in their files)
+## macOS Fish Shell Note
+On Darwin systems, set fish as the default shell using the system-wide path:
+```bash
+chsh -s /run/current-system/sw/bin/fish
+```

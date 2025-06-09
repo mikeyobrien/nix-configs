@@ -3,14 +3,14 @@
   config,
   ...
 }: {
-
-  nix.useDaemon = true;
   nix = {
     extraOptions = ''
       experimental-features = nix-command flakes
     '';
   };
-  services.nix-daemon.enable = true;
+
+  # For use with determinate
+  nix.enable = false;
 
   programs.zsh.enable = true;
   programs.zsh.shellInit = ''
@@ -35,16 +35,12 @@
     end
   '';
 
-  fonts.packages = [
-    (pkgs.nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
-    pkgs.roboto
-  ];
-
   environment.shells = with pkgs; [
     bashInteractive
     zsh
     fish
   ];
+  system.stateVersion = 6;
 
   #homebrew = {
   #  enable = true;

@@ -29,12 +29,6 @@
     way-displays
   ];
 
-  # Disable nixvim on reef
-  modules.editors.nixvim = {
-    enable = false;
-    lazyPlugins.copilot.enable = false;
-  };
-
   # Enable uvx
   modules.development.uvx.enable = true;
 }

@@ -19,6 +19,7 @@
   home-managerMap = {
     x86_64-linux = inputs.home-manager.nixosModules.home-manager;
     aarch64-darwin = inputs.home-manager.darwinModules.home-manager;
+    x86_64-darwin = inputs.home-manager.darwinModules.home-manager;
   };
 
   getMapping = systemType: systemMap:
@@ -36,10 +37,10 @@ in
   systemFunc rec {
     inherit system;
     modules = [
-      outputs.nixosModules.proxmox
-      outputs.nixosModules.virtualisation
+      #outputs.nixosModules.proxmox
+      #outputs.nixosModules.virtualisation
       (if isWsl then inputs.nixos-wsl.nixosModules.wsl else {})
-      inputs.agenix.nixosModules.default
+      #inputs.agenix.nixosModules.default
       ../hosts/${name}/configuration.nix
 
       homeManagerModules

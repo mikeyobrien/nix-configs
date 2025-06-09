@@ -378,8 +378,4 @@
     firefox
   ];
 
-  modules.editors.nixvim = {
-    enable = true;
-    lazyPlugins.copilot.enable = true;
-  };
 }

@@ -14,9 +14,5 @@
     };
   };
 
-  editors.nixvim = {
-    enable = false;
-    lazyPlugins.copilot.enable = false;
-  };
 
 }

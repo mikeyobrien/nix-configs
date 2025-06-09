@@ -7,7 +7,6 @@ with lib;
 {
   imports = [
     ./neovim.nix
-    ./nixvim.nix
     ./emacs.nix
   ];
 }

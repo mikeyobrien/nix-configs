@@ -9,34 +9,32 @@
   outputs,
   user,
   ...
-}: 
-
+}:
 {
   imports = [
-    # Import all available modules
+    # Import all available modules; hosts opt into profiles explicitly
     outputs.homeManagerModules.core
     outputs.homeManagerModules.shells
     outputs.homeManagerModules.terminal
     outputs.homeManagerModules.editors
     outputs.homeManagerModules.development
     outputs.homeManagerModules.llm
-    # Note: profiles are not imported here - hosts choose which profiles to use
   ];
 
   nixpkgs.overlays = [
-      outputs.overlays.modifications
-      outputs.overlays.additions
-      outputs.overlays.unstable-packages
+    outputs.overlays.modifications
+    outputs.overlays.additions
+    outputs.overlays.unstable-packages
   ];
 
-  # Minimal defaults - just essentials and a shell
+  # Minimal defaults - essentials plus prompt-aware fish shell
   modules.core.essential.enable = lib.mkDefault true;
   modules.shells.fish.enable = lib.mkDefault true;
   modules.shells.prompts.enable = lib.mkDefault true;
 
-  # System management - always needed
+  # Home Manager bookkeeping
   programs.home-manager.enable = true;
-  systemd.user.startServices = "sd-switch";
+  systemd.user.startServices = lib.mkIf pkgs.stdenv.isLinux "sd-switch";
   home.stateVersion = "23.05";
 
   # npm global prefix configuration
