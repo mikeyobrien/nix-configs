@@ -42,8 +42,11 @@
       isNormalUser = true;
       openssh.authorizedKeys.keys = [];
       extraGroups = ["wheel"];
+      shell = pkgs.fish;
     };
   };
+
+  programs.fish.enable = true;
 
   services.openssh = {
     enable = true;

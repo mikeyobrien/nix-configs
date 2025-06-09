@@ -7,6 +7,13 @@
     startMenuLaunchers = true;
   };
 
+  # Configure fish as default shell
+  programs.fish.enable = true;
+  users.users.${user} = {
+    isNormalUser = true;
+    shell = pkgs.fish;
+  };
+
   nix = {
     extraOptions = ''
       experimental-features = nix-command flakes
