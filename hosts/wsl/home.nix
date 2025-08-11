@@ -32,7 +32,7 @@
   modules.editors.emacs.enable = true;
   
   # Nixvim configuration
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = false;
     lazyPlugins.copilot.enable = true;
   };

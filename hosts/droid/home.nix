@@ -6,7 +6,7 @@
   ...
 }: {
   imports = [../../home-manager/home.nix];
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = true;
     lazyPlugins.copilot.enable = true;
   };

@@ -5,9 +5,9 @@
 
 with lib;
 let
-  cfg = config.editors.nixvim;
+  cfg = config.modules.editors.nixvim;
 in {
-  options.editors.nixvim = {
+  options.modules.editors.nixvim = {
     enable = mkOption {
       type = types.bool;
       default = false;

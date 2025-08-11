@@ -30,7 +30,7 @@
   ];
 
   # Disable nixvim on reef
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = false;
     lazyPlugins.copilot.enable = false;
   };

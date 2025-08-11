@@ -9,7 +9,7 @@ in {
     homeDirectory = lib.mkForce (if isDarwin then "/Users/${user}" else "/home/${user}");
   };
 
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = true;
     lazyPlugins.copilot.enable = false;
   };

@@ -13,7 +13,7 @@
   # Driftwood is a development machine with CLI focus
   # The cli-developer profile provides git, direnv, tmux, neovim
   # We just add nixvim on top
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = true;
     lazyPlugins.copilot.enable = true;
   };

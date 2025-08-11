@@ -4,7 +4,7 @@
     username = user;
     homeDirectory = "/home/${user}";
   };
-  editors.nixvim = {
+  modules.editors.nixvim = {
     enable = true;
     lazyPlugins.copilot.enable = true;
   };
