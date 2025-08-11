@@ -2,9 +2,9 @@
 
 with lib;
 let
-  cfg = config.modules.uvx;
+  cfg = config.modules.development.uvx;
 in {
-  options.modules.uvx = {
+  options.modules.development.uvx = {
     enable = mkEnableOption "Enable UVX with FHS environment";
   };
 

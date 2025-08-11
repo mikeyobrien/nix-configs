@@ -18,7 +18,6 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [
       llm-with-plugins
-      pkgs.unstable.aider-chat.withPlaywright
     ];
   };
 }

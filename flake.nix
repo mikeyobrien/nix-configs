@@ -14,10 +14,6 @@
     };
 
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    nixvim = {
-      url = "github:nix-community/nixvim/nixos-24.11";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     nixos-wsl.url = "github:nix-community/NixOS-WSL";
     nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
@@ -135,6 +131,13 @@
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
           (import ./hosts/wsl/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
+        ];
+      };
+      "g14" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = { inherit inputs outputs; };
+        modules = [
+          (import ./hosts/g14/home.nix {user = "mobrienv"; lib = nixpkgs.lib; })
         ];
       };
     };

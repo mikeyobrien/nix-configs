@@ -1,13 +1,13 @@
 {user, microvm, pkgs, ...}: {
   imports = [
     ../../home-manager/home.nix
-    ../../modules/home-manager/uvx.nix
   ];
   home = {
     username = user;
     homeDirectory = "/home/${user}";
   };
 
+  # Reef-specific configurations
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
       autoconnect = ["qemu:///system"];
@@ -22,16 +22,19 @@
   #     ExecStart = ["" "${pkgs.gnome.gnome-shell}/bin/gnome-shell --virtual-monitor 1920x1080"];
   #   };
   # };
-  #
-  home.packages = with pkgs; [
+  
+  # Additional packages for reef
+  modules.core.packages.extraPackages = with pkgs; [
     google-chrome
     way-displays
   ];
 
+  # Disable nixvim on reef
   editors.nixvim = {
     enable = false;
     lazyPlugins.copilot.enable = false;
   };
 
-  modules.uvx.enable = true;
+  # Enable uvx
+  modules.development.uvx.enable = true;
 }
