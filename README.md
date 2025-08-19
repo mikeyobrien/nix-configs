@@ -47,7 +47,7 @@ git clone https://github.com/mikeyobrien/nix-configs.git
 cd nix-configs
 
 # Build a specific configuration
-nix build .#homeConfigurations.g14.activationPackage
+nix build .#homeConfigurations.g14.activationPackage --extra-experimental-features flakes --extra-experimental-features nix-command
 
 # Activate the configuration
 ./result/activate

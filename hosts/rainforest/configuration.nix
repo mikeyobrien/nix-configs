@@ -28,6 +28,11 @@
       source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
     end
     # End Nix
+    
+    # User Nix Profile
+    if test -e $HOME/.nix-profile/bin
+      fish_add_path --prepend $HOME/.nix-profile/bin
+    end
   '';
 
   fonts.packages = [

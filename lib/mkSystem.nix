@@ -49,6 +49,8 @@ in
           overlays.additions
           overlays.unstable-packages
         ];
+        
+        nixpkgs.config.allowUnfree = true;
 
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;

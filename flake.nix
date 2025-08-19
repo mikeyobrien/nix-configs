@@ -34,6 +34,9 @@
 
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    
+    emacs-plus.url = "github:cmacrae/emacs";
+    emacs-plus.inputs.nixpkgs.follows = "nixpkgs";
 
     microvm.url = "github:astro/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
@@ -120,24 +123,43 @@
     # TODO: make lib helper `mkHome`
     homeConfigurations = {
       "rainforest" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        pkgs = import nixpkgs {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
           (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; currentSystem = "linux"; }) 
         ];
       };
       "wsl" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        pkgs = import nixpkgs {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
           (import ./hosts/wsl/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
         ];
       };
       "g14" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        pkgs = import nixpkgs {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
           (import ./hosts/g14/home.nix {user = "mobrienv"; lib = nixpkgs.lib; })
+        ];
+      };
+      "darwin" = home-manager.lib.homeManagerConfiguration {
+        pkgs = import nixpkgs {
+          system = "aarch64-darwin";
+          config.allowUnfree = true;
+        };
+        extraSpecialArgs = { inherit inputs outputs; };
+        modules = [
+          (import ./hosts/darwin/home.nix {user = "mobrienv"; lib = nixpkgs.lib; })
         ];
       };
     };

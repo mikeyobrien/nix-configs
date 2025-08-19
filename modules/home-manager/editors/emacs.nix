@@ -1,19 +1,17 @@
-# Emacs is my main driver. I'm the author of Doom Emacs
-# https://github.com/doomemacs. This module sets it up to meet my particular
-# Doomy needs.
+# ABOUTME: Emacs editor configuration with Darwin-specific builds
+# ABOUTME: Uses cmacrae's emacs-plus on macOS and emacs-pgtk on Linux
 
 { lib, config, pkgs, inputs, ... }:
 
 with lib;
-let cfg = config.modules.editors.emacs;
-    emacs = with pkgs; (emacsPackagesFor
-      #(if config.modules.desktop.type == "wayland"
-      emacs-pgtk
-      # else emacs-git)).emacsWithPackages (epkgs: with epkgs; [
-      #   treesit-grammars.with-all-grammars
-      #   vterm
-      #   mu4e ]);
-      );
+let 
+  cfg = config.modules.editors.emacs;
+  isDarwin = pkgs.stdenv.isDarwin;
+  
+  # Select the appropriate Emacs package based on the system
+  emacsPackage = if isDarwin
+    then inputs.emacs-plus.packages.${pkgs.system}.default
+    else pkgs.emacs-pgtk;
 in {
   options.modules.editors.emacs = {
     enable = lib.mkEnableOption "Emacs";
@@ -33,7 +31,7 @@ in {
     home.packages = with pkgs; [
       ## Emacs itself
       binutils            # native-comp needs 'as', provided by this
-      emacs-pgtk               # HEAD + native-comp
+      emacsPackage        # Platform-specific Emacs build
       (pkgs.nerdfonts.override { fonts = [ "FiraCode" "NerdFontsSymbolsOnly" ]; })
 
       ## Doom dependencies

@@ -73,6 +73,10 @@ in {
          then builtins.readFile ../../home-manager/fish.config 
          else "")
         "set -g SHELL ${pkgs.fish}/bin/fish"
+        "# Add Nix profile paths"
+        "if test -e $HOME/.nix-profile/bin"
+        "  fish_add_path --prepend $HOME/.nix-profile/bin"
+        "end"
         "set -gx PATH $PATH $HOME/bin"
         cfg.extraConfig
       ]);
