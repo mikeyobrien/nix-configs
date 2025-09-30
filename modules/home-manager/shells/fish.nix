@@ -73,6 +73,10 @@ in {
          then builtins.readFile ../../home-manager/fish.config 
          else "")
         "set -g SHELL ${pkgs.fish}/bin/fish"
+        "# Initialize mise (rtx) - must come before nix paths"
+        "if type -q mise"
+        "  mise activate fish | source"
+        "end"
         "# Add Nix profile paths"
         "if test -e $HOME/.nix-profile/bin"
         "  fish_add_path --prepend $HOME/.nix-profile/bin"
@@ -110,7 +114,6 @@ in {
     home.packages = with pkgs; [
       babashka
       expect
-      nodejs
     ];
   };
 }

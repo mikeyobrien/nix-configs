@@ -124,12 +124,12 @@
     homeConfigurations = {
       "rainforest" = home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {
-          system = "x86_64-linux";
+          system = "aarch64-darwin";
           config.allowUnfree = true;
         };
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
-          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; currentSystem = "linux"; }) 
+          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; currentSystem = "aarch64-darwin"; }) 
         ];
       };
       "wsl" = home-manager.lib.homeManagerConfiguration {

@@ -32,10 +32,9 @@ in {
   config = mkIf cfg.enable {
     programs.tmux = {
       enable = true;
-      terminal = "screen-256color";
       escapeTime = 0;
       prefix = cfg.prefix;
-      keyMode = "vi";
+      keyMode = "emacs";
       baseIndex = 1;
       aggressiveResize = true;
       
@@ -54,8 +53,8 @@ in {
       ] ++ (optional cfg.enableVimNavigation tmuxPlugins.vim-tmux-navigator);
       
       extraConfig = ''
-        ${if builtins.pathExists ../../home-manager/tmux.conf
-          then builtins.readFile ../../home-manager/tmux.conf
+        ${if builtins.pathExists ../../../home-manager/tmux.conf
+          then builtins.readFile ../../../home-manager/tmux.conf
           else ""}
         ${cfg.extraConfig}
       '';

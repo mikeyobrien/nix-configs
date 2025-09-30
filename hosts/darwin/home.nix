@@ -12,6 +12,7 @@
         mas           # Mac App Store CLI
         dockutil      # Dock management
         pngpaste      # Paste images from clipboard
+        pkgs.unstable.devenv
       ];
     })
   ];
@@ -19,6 +20,12 @@
   home = {
     username = user;
     homeDirectory = "/Users/${user}";  # macOS home directory path
+    
+    # Set editor to use emacsclient with existing frame
+    sessionVariables = lib.mkForce {
+      EDITOR = "emacsclient -n --reuse-frame";
+      ALTERNATE_EDITOR = "";  # Start emacs daemon if not running
+    };
   };
 
 
