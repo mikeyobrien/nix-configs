@@ -26,6 +26,7 @@ in {
   config = mkIf cfg.enable {
     programs.zellij = {
       enable = true;
+      package = pkgs.unstable.zellij;
       settings = {
         theme = cfg.theme;
       } // cfg.extraSettings;
