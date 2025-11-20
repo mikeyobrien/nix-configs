@@ -23,16 +23,20 @@ in {
       fd       # Better find
       ripgrep  # Better grep
       tree     # Directory visualization
-      
+
       # Text processing
       jq       # JSON processor
       bat      # Better cat with syntax highlighting
-      
+
       # System monitoring
       htop     # Process viewer
-      
+
       # Shell enhancement
       fzf      # Fuzzy finder
+      which    # Command locator
+
+      # Development tools
+      # gh       # GitHub CLI - managed outside Nix to allow login
     ] ++ cfg.extraPackages;
   };
 }

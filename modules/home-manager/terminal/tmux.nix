@@ -34,7 +34,7 @@ in {
       enable = true;
       escapeTime = 0;
       prefix = cfg.prefix;
-      keyMode = "emacs";
+      keyMode = "vi";
       baseIndex = 1;
       aggressiveResize = true;
       

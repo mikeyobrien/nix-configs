@@ -19,10 +19,16 @@
     username = user;
     homeDirectory = "/home/${user}";
   };
-  
+
+  # Enable bash shell for login shell compatibility
+  modules.shells.bash.enable = true;
+
   # Enable additional terminal emulator for laptop use
   modules.terminal.alacritty = {
     enable = true;
     fontSize = 14; # Larger font for high-DPI display
   };
+
+  # Enable zellij terminal workspace
+  modules.terminal.zellij.enable = true;
 }

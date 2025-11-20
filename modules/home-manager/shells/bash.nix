@@ -24,6 +24,11 @@ in {
       shellOptions = [];
       historyControl = ["ignoredups" "ignorespace"];
       shellAliases = commonAliases // cfg.extraAliases;
+
+      # Add ~/.local/bin to PATH
+      sessionVariables = {
+        PATH = "$PATH:$HOME/.local/bin";
+      };
     };
   };
 }

@@ -1,33 +1,35 @@
-# CLAUDE.md
+# nix-configs Project
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Quick Reference: g14 Rebuild
+
+```bash
+home-manager switch --flake .#g14 --extra-experimental-features "nix-command flakes"
+```
 
 ## Repository Overview
 
-This is a modular Nix configuration repository supporting NixOS, Darwin (macOS), WSL, and Nix-on-Droid. The architecture emphasizes composability through a minimal base configuration that hosts extend additively.
+Modular Nix configuration repository supporting NixOS, Darwin (macOS), WSL, and Nix-on-Droid. Architecture emphasizes composability through a minimal base configuration that hosts extend additively.
 
 ## Key Commands
 
 ### Building and Activating Configurations
 
 ```bash
+# Home Manager (primary workflow)
+home-manager switch --flake .#<hostname>
+home-manager switch --flake .#<hostname> -b backup  # Backup conflicting files
+home-manager switch --flake .#g14 --extra-experimental-features "nix-command flakes"
+
 # NixOS systems
 sudo nixos-rebuild switch --flake .#<hostname>
 sudo nixos-rebuild test --flake .#<hostname>    # Test without switching
-sudo nixos-rebuild build --flake .#<hostname>   # Build without activating
-
-# Home Manager (standalone)
-nix build .#homeConfigurations.<hostname>.activationPackage
-./result/activate
-# Or with home-manager installed:
-home-manager switch --flake .#<hostname>
-home-manager switch --flake .#<hostname> -b backup  # Backup conflicting files
 
 # Darwin (macOS)
 darwin-rebuild switch --flake .#rainforest
 
-# Always use experimental features flag if needed:
-nix --extra-experimental-features "nix-command flakes" build ...
+# Manual activation
+nix build .#homeConfigurations.<hostname>.activationPackage
+./result/activate
 
 # Allow unfree packages when needed:
 NIXPKGS_ALLOW_UNFREE=1 nix build ... --impure

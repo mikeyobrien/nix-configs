@@ -154,7 +154,7 @@
         };
         extraSpecialArgs = { inherit inputs outputs; };
         modules = [
-          (import ./hosts/g14/home.nix {user = "mobrienv"; lib = nixpkgs.lib; })
+          (import ./hosts/g14/home.nix {user = "arch"; lib = nixpkgs.lib; })
         ];
       };
       "darwin" = home-manager.lib.homeManagerConfiguration {

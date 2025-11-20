@@ -38,4 +38,14 @@
   programs.home-manager.enable = true;
   systemd.user.startServices = "sd-switch";
   home.stateVersion = "23.05";
+
+  # npm global prefix configuration
+  home.sessionVariables = {
+    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
+  };
+
+  home.sessionPath = [
+    "${config.home.homeDirectory}/.npm-global/bin"
+    "${config.home.homeDirectory}/.cargo/bin"
+  ];
 }

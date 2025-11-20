@@ -37,6 +37,9 @@ in {
   };
   
   config = mkIf cfg.enable {
+    # Enable SSH agent with fish shell integration
+    services.ssh-agent.enable = true;
+
     programs.fish = {
       enable = true;
       
@@ -59,7 +62,17 @@ in {
         ta = "tmux attach -t";
         tl = "tmux list-sessions";
         tk = "tmux kill-session -t";
-        
+
+        # Zellij aliases
+        zj = "zellij";
+        zja = "zellij attach";
+        zjl = "zellij list-sessions";
+        zjk = "zellij kill-session";
+        zjka = "zellij kill-all-sessions";
+        zje = "zellij edit";
+        zjr = "zellij run --";
+        zjrf = "zellij run --floating --";
+
         # Kubernetes aliases
         kgp = "kubectl get pods";
         
@@ -77,11 +90,9 @@ in {
         "if type -q mise"
         "  mise activate fish | source"
         "end"
-        "# Add Nix profile paths"
-        "if test -e $HOME/.nix-profile/bin"
-        "  fish_add_path --prepend $HOME/.nix-profile/bin"
-        "end"
+        "# Add Nix profile paths (home-manager handles this automatically)"
         "set -gx PATH $PATH $HOME/bin"
+        "fish_add_path $HOME/.local/bin/"
         cfg.extraConfig
       ]);
       
