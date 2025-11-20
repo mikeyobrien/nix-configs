@@ -29,6 +29,9 @@ in {
       package = pkgs.unstable.zellij;
       settings = {
         theme = cfg.theme;
+        web_server = {
+          bind = "0.0.0.0:8082";
+        };
       } // cfg.extraSettings;
     };
   };
