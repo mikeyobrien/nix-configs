@@ -82,8 +82,8 @@ in {
       } // cfg.extraAliases;
       
       interactiveShellInit = strings.concatStrings (strings.intersperse "\n" [
-        (if builtins.pathExists ../../home-manager/fish.config 
-         then builtins.readFile ../../home-manager/fish.config 
+        (if builtins.pathExists ../../home-manager/fish.config
+         then builtins.readFile ../../home-manager/fish.config
          else "")
         "set -g SHELL ${pkgs.fish}/bin/fish"
         "# Initialize mise (rtx) - must come before nix paths"
@@ -93,6 +93,23 @@ in {
         "# Add Nix profile paths (home-manager handles this automatically)"
         "set -gx PATH $PATH $HOME/bin"
         "fish_add_path $HOME/.local/bin/"
+        "# Add npm global bin directory"
+        "if test -e $HOME/.npm-global/bin"
+        "  fish_add_path $HOME/.npm-global/bin"
+        "end"
+        "# Claude Code aliases (if installed)"
+        "if type -q claude"
+        "  alias cl='claude'                                           # Start interactive session"
+        "  alias clc='claude -c'                                       # Continue previous conversation"
+        "  alias clp='claude -p'                                       # Print mode (non-interactive)"
+        "  alias clr='claude -r'                                       # Resume session by ID"
+        "  alias cls='claude --model sonnet'                           # Use Sonnet model"
+        "  alias clo='claude --model opus'                             # Use Opus model"
+        "  alias clh='claude --model haiku'                            # Use Haiku model"
+        "  alias clv='claude --verbose'                                # Enable verbose output"
+        "  alias cly='claude --dangerously-skip-permissions'           # Skip all permission prompts (yolo mode)"
+        "  alias clyc='claude -c --dangerously-skip-permissions'       # Continue with skip permissions"
+        "end"
         cfg.extraConfig
       ]);
       

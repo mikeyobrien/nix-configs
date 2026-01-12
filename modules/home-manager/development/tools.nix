@@ -19,6 +19,7 @@ in {
   
   config = mkIf cfg.enable {
     home.packages = with pkgs; [
+      gh
       lazygit
       just
       # devenv  # Temporarily disabled due to build issues

@@ -22,7 +22,7 @@ in {
       # Enhanced tools
       yadm         # Dotfile manager
       grc          # Generic colouriser
-      xsv          # CSV toolkit
+      xan          # CSV toolkit (maintained alternative to xsv)
       glow         # Markdown renderer
       just         # Command runner
       

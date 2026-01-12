@@ -21,6 +21,9 @@
   networking.hostName = "studio";
   networking.computerName = "studio";
   system.defaults.smb.NetBIOSName = "studio";
+  
+  # Set primary user for homebrew
+  system.primaryUser = "mobrienv";
 
   programs.zsh.enable = true;
   programs.zsh.shellInit = ''
@@ -47,12 +50,18 @@
   ];
   system.stateVersion = 6;
 
-  #homebrew = {
-  #  enable = true;
-  #  taps = [];
-  #  casks = [
-  #    "nikitabobko/tap/aerospace"
-  #  ];
-  #};
+  homebrew = {
+    enable = true;
+    taps = [
+      "d12frosted/emacs-plus"
+    ];
+    brews = [
+      "emacs-plus"
+      "strands-agents-sops"
+    ];
+    casks = [
+      # "nikitabobko/tap/aerospace"
+    ];
+  };
 
 }

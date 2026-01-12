@@ -29,6 +29,7 @@
 
   # Minimal defaults - essentials plus prompt-aware fish shell
   modules.core.essential.enable = lib.mkDefault true;
+  modules.core.commonCli.enable = lib.mkDefault true;
   modules.shells.fish.enable = lib.mkDefault true;
   modules.shells.prompts.enable = lib.mkDefault true;
 
