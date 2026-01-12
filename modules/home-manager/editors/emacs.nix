@@ -36,7 +36,8 @@ in {
       ## Emacs itself
       binutils            # native-comp needs 'as', provided by this
       emacsPackage        # Platform-specific Emacs build
-      (pkgs.nerdfonts.override { fonts = [ "FiraCode" "NerdFontsSymbolsOnly" ]; })
+      pkgs.nerd-fonts.fira-code
+      pkgs.nerd-fonts.symbols-only
     ] ++ lib.optionals (!pkgs.stdenv.isDarwin) [
       grip                # Not available on macOS
     ] ++ [

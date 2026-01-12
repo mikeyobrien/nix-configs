@@ -10,6 +10,9 @@ in {
   };
 
 
+  modules.editors.emacs.enable = true;
+
+
   programs.tmux = {
     prefix = lib.mkForce "C-a";
   };
