@@ -1,0 +1,148 @@
+# ABOUTME: Lima VM configuration for orchard using nixos-infect approach
+# ABOUTME: Converts Debian to NixOS for k3s HA cluster node
+
+arch: "x86_64"  # Using x86_64 for Rosetta
+
+# VM resources
+cpus: 4
+memory: "8GiB"
+disk: "50GiB"
+
+# Start with Debian (best support for nixos-infect)
+images:
+  - location: "https://cloud.debian.org/images/cloud/bookworm/20240717-1811/debian-12-genericcloud-amd64-20240717-1811.qcow2"
+    arch: "x86_64"
+
+# Mounts
+mounts:
+  - location: "~"
+    mountPoint: "/home/mobrienv.host"
+    writable: false
+  - location: "/tmp/lima"
+    mountPoint: "/tmp/lima"
+    writable: true
+
+# SSH configuration
+ssh:
+  localPort: 0
+  loadDotSSHPubKeys: true
+
+# Network configuration
+networks:
+  - lima: user-v2
+
+# Port forwarding for k3s
+portForwards:
+  - guestPort: 6443
+    hostPort: 6443
+    proto: tcp
+  - guestPort: 10250
+    hostPort: 10250  
+    proto: tcp
+  - guestPort: 2379
+    hostPort: 2379
+    proto: tcp
+  - guestPort: 2380
+    hostPort: 2380
+    proto: tcp
+  - guestPort: 9100
+    hostPort: 19100
+    proto: tcp
+
+# Use QEMU for x86_64 emulation
+vmType: "qemu"
+
+# Provision script to install NixOS
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eu
+      
+      # Wait for network
+      while ! ping -c 1 8.8.8.8 &> /dev/null; do
+        echo "Waiting for network..."
+        sleep 2
+      done
+      
+      # Install dependencies
+      apt-get update
+      apt-get install -y curl sudo git
+      
+      # Create user if not exists
+      useradd -m -G sudo -s /bin/bash mobrienv || true
+      echo "mobrienv ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/mobrienv
+      
+      # Download our configuration
+      mkdir -p /etc/nixos-infect
+      cat > /etc/nixos-infect/configuration.nix << 'EOF'
+      { config, pkgs, lib, ... }:
+      {
+        imports = [
+          ./hardware-configuration.nix
+        ];
+        
+        boot.loader.grub.enable = true;
+        boot.loader.grub.device = "/dev/vda";
+        
+        networking.hostName = "orchard";
+        networking.networkmanager.enable = true;
+        
+        # Enable flakes
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+        
+        # SSH access
+        services.openssh.enable = true;
+        services.openssh.settings.PermitRootLogin = "yes";
+        
+        # K3s configuration (will be applied later from flake)
+        # This is just the base system
+        
+        # User
+        users.users.mobrienv = {
+          isNormalUser = true;
+          extraGroups = [ "wheel" "networkmanager" ];
+          openssh.authorizedKeys.keys = [
+            # Add your SSH key here or it will be added via Lima
+          ];
+        };
+        
+        # Allow passwordless sudo
+        security.sudo.wheelNeedsPassword = false;
+        
+        # Essential packages
+        environment.systemPackages = with pkgs; [
+          vim
+          git
+          curl
+          htop
+        ];
+        
+        system.stateVersion = "24.05";
+      }
+      EOF
+      
+      # Download and run nixos-infect
+      echo "Downloading nixos-infect..."
+      curl -L https://raw.githubusercontent.com/elitak/nixos-infect/master/nixos-infect -o /tmp/nixos-infect
+      
+      # Run nixos-infect (this will reboot the system)
+      echo "Running nixos-infect to convert to NixOS..."
+      NIX_CHANNEL=nixos-24.05 bash /tmp/nixos-infect 2>&1 || true
+
+# Environment for k3s
+env:
+  K3S_NODE_NAME: "orchard"
+
+message: |
+  ===================================================
+  Orchard VM (Converting to NixOS)
+  
+  The VM will automatically convert to NixOS.
+  This process takes about 10-15 minutes.
+  
+  After conversion, apply the k3s configuration:
+    limactl shell orchard
+    cd /home/mobrienv.host/Code/nix-configs
+    sudo nixos-rebuild switch --flake .#orchard
+  ===================================================

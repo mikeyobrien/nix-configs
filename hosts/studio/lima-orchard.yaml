@@ -1,0 +1,72 @@
+# ABOUTME: Lima VM configuration for orchard k3s cluster node
+# ABOUTME: Runs aarch64 Linux VM on Mac Studio for NixOS deployment
+
+# VM name will be set by provision script
+# arch: "aarch64" is default on Apple Silicon
+
+# VM resources
+cpus: 4
+memory: "8GiB"
+disk: "50GiB"
+
+# Use Ubuntu as base (will be replaced with NixOS)
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+# Disable mounts by default - NixOS will manage its own
+mounts: []
+
+# SSH configuration
+ssh:
+  localPort: 0  # Let Lima choose a free port
+  loadDotSSHPubKeys: true
+
+# Network configuration
+networks:
+  # Enable user-mode networking for initial setup
+  - lima: user-v2
+    # Interface name for k3s
+    interface: "lima0"
+
+# Cloud-init configuration for initial setup
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -eu
+      
+      # Update system
+      apt-get update
+      apt-get install -y curl wget git
+      
+      # Prepare for NixOS installation
+      # Create partition for NixOS (will be done by install script)
+      echo "VM prepared for NixOS installation"
+
+# Port forwarding for k3s
+portForwards:
+  - guestPort: 6443
+    hostPort: 6443
+    proto: tcp
+    description: "k3s API server"
+  - guestPort: 10250
+    hostPort: 10250  
+    proto: tcp
+    description: "kubelet"
+
+# Environment for k3s
+env:
+  K3S_NODE_NAME: "orchard"
+
+# VM lifecycle hooks
+message: |
+  ===================================================
+  Orchard VM for k3s cluster
+  
+  To install NixOS on this VM:
+    ./scripts/provision-orchard-vm.sh --install-nixos
+  
+  To get a shell:
+    limactl shell orchard
+  ===================================================

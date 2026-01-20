@@ -69,9 +69,12 @@ in {
         zjl = "zellij list-sessions";
         zjk = "zellij kill-session";
         zjka = "zellij kill-all-sessions";
+        zjd = "zellij delete-session";
+        zjda = "zellij delete-all-sessions";
         zje = "zellij edit";
         zjr = "zellij run --";
         zjrf = "zellij run --floating --";
+        zjac = "zellij action";
 
         # Kubernetes aliases
         kgp = "kubectl get pods";
@@ -96,6 +99,10 @@ in {
         "# Add npm global bin directory"
         "if test -e $HOME/.npm-global/bin"
         "  fish_add_path $HOME/.npm-global/bin"
+        "end"
+        "# Add local bin directory"
+        "if test -e $HOME/.local/bin"
+        "  fish_add_path $HOME/.local/bin"
         "end"
         "# Claude Code aliases (if installed)"
         "if type -q claude"

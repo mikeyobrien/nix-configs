@@ -10,6 +10,7 @@ in {
   };
 
   modules.development.tools.enable = true;
+  modules.development.git.enable = true;
   modules.editors.emacs.enable = true;
   modules.editors.neovim.enable = true;
   home.packages = with pkgs; [

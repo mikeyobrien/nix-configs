@@ -1,0 +1,2 @@
+- This machine is `studio` which is nix-darwin running on MacOS
+- Apply switches with `sudo darwin-rebuild switch --flake .#studio`

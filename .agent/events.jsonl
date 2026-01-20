@@ -1,0 +1,3 @@
+{"ts":"2026-01-20T17:37:26.411744+00:00","iteration":0,"hat":"loop","topic":"task.start","triggered":"planner","payload":"Research best practices for declarative NixOS VMs on MacOS. Compile findings in RESEARCH.md"}
+{"ts":"2026-01-20T17:37:34.809143+00:00","iteration":0,"hat":"loop","topic":"task.start","triggered":"planner","payload":"Research best practices for declarative NixOS VMs on MacOS. Compile findings in RESEARCH.md"}
+{"payload":"Compiled findings in RESEARCH.md - recommends native NixOS VM with virtualisation.host.pkgs","topic":"research.done","ts":"2026-01-20T17:40:47.722638+00:00"}

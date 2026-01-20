@@ -66,7 +66,10 @@
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
     # TODO Find out whats the advantage of setting these as outputs
-    packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+    packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system}) // {
+      # Orchard VM runner for Mac Studio
+      aarch64-darwin.orchardVM = self.nixosConfigurations.orchard.config.system.build.vm;
+    };
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
     nixosModules = import ./modules/nixos {inherit inputs;};
     homeManagerModules = import ./modules/home-manager {inherit inputs;};
@@ -97,6 +100,48 @@
       reef = mkSystem "reef" {
         user = "mobrienv";
         system = "x86_64-linux";
+      };
+
+      # Orchard - K3s VM for Mac Studio (aarch64-darwin host)
+      orchard = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [
+          ./hosts/orchard/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            nixpkgs.overlays = [
+              overlays.modifications
+              overlays.additions
+              overlays.unstable-packages
+            ];
+            nixpkgs.config.allowUnfree = true;
+
+            # Configure VM to use Darwin host packages
+            virtualisation.vmVariant.virtualisation.host.pkgs = 
+              nixpkgs.legacyPackages.aarch64-darwin;
+
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.mobrienv = ./hosts/orchard/home.nix;
+            home-manager.extraSpecialArgs = {
+              currentSystem = "aarch64-linux";
+              user = "mobrienv";
+              inputs = inputs;
+              outputs = outputs;
+              isDarwin = false;
+              isWsl = false;
+            };
+          }
+          {
+            config._module.args = {
+              currentSystemName = "orchard";
+              currentSystem = "aarch64-linux";
+              user = "mobrienv";
+              inputs = inputs;
+              outputs = outputs;
+            };
+          }
+        ];
       };
     };
 

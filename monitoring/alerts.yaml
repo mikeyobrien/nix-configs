@@ -1,0 +1,247 @@
+# ABOUTME: Critical alert rules for k3s cluster monitoring
+# ABOUTME: Defines thresholds and conditions for system and cluster alerts
+
+# This file contains Prometheus alert rules for the k3s cluster
+# It should be deployed to Prometheus via ConfigMap or similar mechanism
+
+groups:
+  - name: node_alerts
+    interval: 30s
+    rules:
+      # CPU Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+          component: node
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% (current value: {{ $value }}%)"
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 5m
+        labels:
+          severity: critical
+          component: node
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 95% (current value: {{ $value }}%)"
+
+      # Memory Alerts
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          component: node
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85% (current value: {{ $value }}%)"
+
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          component: node
+        annotations:
+          summary: "Critical memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 95% (current value: {{ $value }}%)"
+
+      # Disk Alerts
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+          component: node
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is below 15% (current value: {{ $value }}%)"
+
+      - alert: CriticalDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+        for: 5m
+        labels:
+          severity: critical
+          component: node
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Disk space is below 5% (current value: {{ $value }}%)"
+
+      # Node Status
+      - alert: NodeDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: node
+        annotations:
+          summary: "Node {{ $labels.instance }} is down"
+          description: "Node exporter on {{ $labels.instance }} has been down for more than 2 minutes"
+
+      # System Load
+      - alert: HighSystemLoad
+        expr: node_load5 / on(instance) group_left() count(node_cpu_seconds_total{mode="idle"}) by (instance) > 2
+        for: 15m
+        labels:
+          severity: warning
+          component: node
+        annotations:
+          summary: "High system load on {{ $labels.instance }}"
+          description: "5-minute load average is high ({{ $value }} per CPU)"
+
+  - name: kubernetes_alerts
+    interval: 30s
+    rules:
+      # Node Status
+      - alert: KubernetesNodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: kubernetes
+        annotations:
+          summary: "Kubernetes node {{ $labels.node }} is not ready"
+          description: "Node {{ $labels.node }} has been in NotReady state for more than 5 minutes"
+
+      # Pod Alerts
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted {{ $value }} times in the last 5 minutes"
+
+      - alert: PodNotReady
+        expr: kube_pod_status_ready{condition="true"} == 0
+        for: 10m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready"
+          description: "Pod has been in NotReady state for more than 10 minutes"
+
+      # Deployment Alerts
+      - alert: DeploymentReplicasMismatch
+        expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+        for: 10m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica mismatch"
+          description: "Deployment has {{ $value }} replicas available, but desired count is {{ $labels.spec_replicas }}"
+
+      # PVC Alerts
+      - alert: PersistentVolumeClaimPending
+        expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+        annotations:
+          summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is pending"
+          description: "PersistentVolumeClaim has been in Pending state for more than 5 minutes"
+
+  - name: k3s_alerts
+    interval: 30s
+    rules:
+      # K3s Service
+      - alert: K3sServiceDown
+        expr: up{job="k3s"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: k3s
+        annotations:
+          summary: "K3s service is down on {{ $labels.instance }}"
+          description: "K3s service has been down for more than 2 minutes"
+
+      # ETCD Alerts (for HA clusters)
+      - alert: EtcdInsufficientMembers
+        expr: count(up{job="etcd"} == 1) < 3
+        for: 5m
+        labels:
+          severity: critical
+          component: etcd
+        annotations:
+          summary: "Insufficient ETCD members"
+          description: "ETCD cluster has less than 3 healthy members"
+
+      - alert: EtcdNoLeader
+        expr: etcd_server_has_leader == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: etcd
+        annotations:
+          summary: "ETCD has no leader"
+          description: "ETCD cluster has no leader for more than 1 minute"
+
+      # API Server
+      - alert: APIServerLatencyHigh
+        expr: histogram_quantile(0.99, rate(apiserver_request_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: k3s
+        annotations:
+          summary: "API server latency is high"
+          description: "99th percentile latency is above 1s (current: {{ $value }}s)"
+
+  - name: network_alerts
+    interval: 30s
+    rules:
+      # Network Errors
+      - alert: HighNetworkErrorRate
+        expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network error rate on {{ $labels.instance }}"
+          description: "Network interface {{ $labels.device }} has high error rate ({{ $value }} errors/sec)"
+
+      # Network Saturation
+      - alert: NetworkInterfaceSaturated
+        expr: rate(node_network_receive_bytes_total[5m]) > 100000000
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "Network interface saturated on {{ $labels.instance }}"
+          description: "Network interface {{ $labels.device }} receiving >100MB/s"
+
+  - name: security_alerts
+    interval: 30s
+    rules:
+      # SSH Login Attempts
+      - alert: HighSSHLoginFailures
+        expr: rate(node_systemd_unit_state{name="sshd.service",state="failed"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High SSH login failures on {{ $labels.instance }}"
+          description: "More than 5 SSH login failures per minute"
+
+      # Certificate Expiry
+      - alert: CertificateExpiringSoon
+        expr: (kube_pod_container_info{container="kube-apiserver"} * on(pod) group_left() (time() - kube_pod_start_time)) > 86400 * 350
+        for: 24h
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Kubernetes certificates expiring soon"
+          description: "Certificates will expire in less than 15 days"

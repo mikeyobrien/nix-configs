@@ -23,6 +23,7 @@ in {
       yadm         # Dotfile manager
       grc          # Generic colouriser
       xan          # CSV toolkit (maintained alternative to xsv)
+      yq-go        # YAML/JSON processor
       glow         # Markdown renderer
       just         # Command runner
       
