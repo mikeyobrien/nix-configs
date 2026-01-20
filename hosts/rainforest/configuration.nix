@@ -7,6 +7,24 @@
     extraOptions = ''
       experimental-features = nix-command flakes
     '';
+    
+    # Remote builder configuration
+    distributedBuilds = true;
+    buildMachines = [
+      {
+        hostName = "reef";
+        sshUser = "mobrienv";
+        sshKey = "/Users/mobrienv/.ssh/id_ed25519";
+        system = "aarch64-linux";
+        maxJobs = 8;
+        speedFactor = 2;
+        supportedFeatures = [ "nixos-test" "big-parallel" "kvm" ];
+      }
+    ];
+    
+    settings = {
+      builders-use-substitutes = true;
+    };
   };
 
   # For use with determinate
