@@ -36,11 +36,9 @@
     name = "iqn.2023-01.dev.mobrienv:${config.networking.hostName}";
   };
 
-  # Enable NFS client for Longhorn disaster recovery support
-  services.nfs.server = {
-    enable = true;
-    enableNFSv4 = true;
-  };
+  # Enable NFS server for Longhorn disaster recovery support
+  # NFSv4 is enabled by default
+  services.nfs.server.enable = true;
 
   # Create the default Longhorn data directory
   systemd.tmpfiles.rules = [
@@ -81,6 +79,5 @@
     e2fsprogs      # For ext4 filesystem tools
     xfsprogs       # For XFS filesystem tools
     jq             # Used by some Longhorn scripts
-    iscsi-initiator-utils # Additional iSCSI tools
   ];
 }
