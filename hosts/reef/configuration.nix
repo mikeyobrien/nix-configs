@@ -93,9 +93,9 @@
   systemd.network.networks."10-lan-bridge" = {
     matchConfig.Name = "br0";
     networkConfig = {
-      Address = ["10.10.11.39/23"];
-      Gateway = "10.10.10.1";
-      DNS = ["10.10.10.1"];
+      Address = ["192.168.1.2/24"];
+      Gateway = "192.168.1.1";
+      DNS = ["192.168.1.1"];
     };
     linkConfig.RequiredForOnline = "routable";
   };
