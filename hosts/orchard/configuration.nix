@@ -8,6 +8,18 @@
     ../base-k3s-vm/configuration.nix
   ];
 
+  # Boot configuration for VM
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/vda";
+  };
+
+  # Root filesystem
+  fileSystems."/" = {
+    device = "/dev/vda1";
+    fsType = "ext4";
+  };
+
   # Hostname and networking
   networking = {
     hostName = "orchard";
@@ -64,15 +76,7 @@
       
       # Use serial console instead of graphical window
       graphics = false;
-      
-      # Share /nix/store from host via virtio-fs
-      sharedDirectories = {
-        nix-store = {
-          source = "/nix/store";
-          target = "/nix/.host-store";
-        };
-      };
-      
+
       # Network configuration
       forwardPorts = [
         { from = "host"; host.port = 6443; guest.port = 6443; }  # K8s API
