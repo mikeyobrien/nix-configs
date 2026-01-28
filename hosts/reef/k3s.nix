@@ -14,6 +14,7 @@
       "--disable=traefik"
       "--write-kubeconfig-mode=660"
       "--write-kubeconfig-group=users"
+      "--kubelet-arg=max-pods=200"
     ];
   };
 
