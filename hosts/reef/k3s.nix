@@ -20,7 +20,6 @@
 
   virtualisation.docker = {
     enable = true;
-    enableNvidia = true;
   };
 
   hardware = {
@@ -67,13 +66,14 @@
     31999         # Backup store port
   ];
 
-  environment.systemPackages = with pkgs; [ 
+  environment.systemPackages = with pkgs; [
     kubectl
     kubernetes-helm
     kubeseal
     kustomize
     kompose
     runc
+    nvidia-container-toolkit.tools  # Provides nvidia-container-runtime.cdi for k3s containerd
     openiscsi
     nfs-utils      # For NFS client support
     util-linux     # For tools like blkid, lsblk

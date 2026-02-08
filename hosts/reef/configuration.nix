@@ -1,4 +1,4 @@
-{ config, pkgs, outputs, ... }:
+{ config, lib, pkgs, outputs, ... }:
 
 {  
   imports =
@@ -9,7 +9,6 @@
       ./k3s.nix
       ./microvm.nix 
       ./roon-server.nix
-      ./glances.nix
       #./ups.nix
       # TODO: Unable to initialize capture methodAdd Cachix
     ];
@@ -26,11 +25,15 @@
     trusted-users = ["root" "mobrienv"];
   };
 
+  # Increase nix-daemon file descriptor limit for large builds (microVM chroot sandboxing)
+  systemd.services.nix-daemon.serviceConfig.LimitNOFILE = 1048576;
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
+    "fs.file-max" = lib.mkForce 524288;
   };
 
   boot.kernelParams = [ "intel_iommu=on" "iommu=pt" ];
@@ -163,7 +166,8 @@
     tcpdump
     argocd
     terraform
-    tailscale
+    pkgs.unstable.tailscale
+    gh
 
     gnome-tweaks
     adwaita-icon-theme 
@@ -171,7 +175,7 @@
   ];
   
   # Glances configuration with NVIDIA GPU support
-  services.glances.enable = true;
+  services.glances.enable = false;
 
   programs.mtr.enable = true;
   programs.gnupg.agent = {
@@ -182,6 +186,7 @@
   services.openssh.enable = true;
   services.tailscale = {
     enable = true;
+    package = pkgs.unstable.tailscale;
     useRoutingFeatures = "both"; # Enable subnet routing and exit node capabilities
     extraUpFlags = [
       "--ssh"
@@ -211,6 +216,35 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
+  # Qwen3-Coder-Next via llama.cpp (OpenAI-compatible API on port 8001)
+  systemd.services.llama-server = {
+    description = "llama.cpp server for Qwen3-Coder-Next";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    environment = {
+      LD_LIBRARY_PATH = "/run/opengl-driver/lib";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "mobrienv";
+      ExecStart = ''
+        /home/mobrienv/llama.cpp/build/bin/llama-server \
+          --model /home/mobrienv/unsloth/Qwen3-Coder-Next-GGUF/Qwen3-Coder-Next-UD-Q4_K_XL.gguf \
+          --host 0.0.0.0 \
+          --port 8001 \
+          --alias Qwen3-Coder-Next \
+          --temp 1.0 \
+          --top-p 0.95 \
+          --min-p 0.01 \
+          --top-k 40 \
+          --ctx-size 32768 \
+          --n-gpu-layers 40
+      '';
+      Restart = "on-failure";
+      RestartSec = 10;
+    };
+  };
+
   systemd.sleep.extraConfig = ''
     AllowSuspend=no
     AllowHibernation=no
@@ -218,10 +252,15 @@
     AllowSuspendThenHibernate=no
   '';
 
+  # Local NVMe data drive for Immich photos/videos
+  fileSystems."/mnt/data" = {
+    device = "/dev/disk/by-uuid/101cbd70-c8a7-41b0-985f-8fc8e3d55486";
+    fsType = "ext4";
+  };
+
   # NFS client configuration
   services.rpcbind.enable = true;  # Required for NFS
 
-  # NFS mount commented out as we now use local NVMe drive for /mnt/data
   fileSystems."/mnt/media" = {
     device = "10.10.10.8:/mnt/user/media";
     fsType = "nfs";
@@ -233,6 +272,8 @@
     binfmt = true;
   };
 
+  # Enable nix-ld for dynamically linked binaries
+  programs.nix-ld.enable = true;
+
   system.stateVersion = "24.11";
 }
-
