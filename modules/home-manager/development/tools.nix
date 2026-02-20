@@ -19,10 +19,11 @@ in {
   
   config = mkIf cfg.enable {
     home.packages = with pkgs; [
+      bun
       gh
       lazygit
       just
-      # devenv  # Temporarily disabled due to build issues
+      unstable.devenv
     ] ++ cfg.extraTools;
   };
 }

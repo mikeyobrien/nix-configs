@@ -37,8 +37,8 @@ in {
         runScript = "bash";
       })
       
-      # Create a wrapper script for convenience
-      (pkgs.writeShellScriptBin "uvx" ''
+      # Provide an explicit FHS wrapper to avoid colliding with uv's uvx binary.
+      (pkgs.writeShellScriptBin "uvx-fhs" ''
         exec uvx-env uvx "$@"
       '')
     ];

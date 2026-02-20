@@ -41,6 +41,13 @@
   # npm global prefix configuration
   home.sessionVariables = {
     NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
+    
+    # pi-otlp metrics collection
+    PI_OTLP_ENABLE = "1";
+    OTEL_METRICS_EXPORTER = "otlp";
+    OTEL_EXPORTER_OTLP_ENDPOINT = "https://otel.lan.mobrienv.dev/v1/metrics";
+    # Optional: enable debug logging
+    PI_OTLP_DEBUG = "1";
   };
 
   home.sessionPath = [

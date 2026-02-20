@@ -13,6 +13,9 @@
       autoconnect = ["qemu:///system"];
       uris = ["qemu:///system"];
     };
+    "org/gnome/desktop/interface" = {
+      scaling-factor = 2;
+    };
   };
 
   # Override GNOME Shell Wayland service to add virtual monitor
@@ -24,8 +27,10 @@
   # };
   
   # Additional packages for reef
-  modules.core.packages.extraPackages = with pkgs; [
+  home.packages = with pkgs; [
     google-chrome
+    kdePackages.konsole
+    nodejs
     way-displays
   ];
 

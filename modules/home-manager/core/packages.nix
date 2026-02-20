@@ -25,7 +25,6 @@ in {
     # Development tools that were in core
     home.packages = with pkgs; [
       nil      # Nix LSP
-      # devenv   # Development environments - temporarily disabled due to build issues
     ] ++ cfg.extraPackages;
   };
 }

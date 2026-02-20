@@ -13,6 +13,7 @@ in {
     ./languages.nix
     ./gpg.nix
     ./tools.nix
+    ./uv.nix
     ./uvx.nix
   ];
   

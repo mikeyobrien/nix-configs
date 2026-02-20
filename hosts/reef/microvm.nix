@@ -37,17 +37,49 @@
             isNormalUser = true;
             home = "/home/${user}";
             shell = pkgs.fish;
-            extraGroups = ["wheel"];
+            extraGroups = ["wheel" "docker"];
             initialPassword = "changeme";
+            linger = true;
           };
 
           security.sudo.wheelNeedsPassword = false;
           services.openssh.enable = true;
 
+          # Prevent systemd from killing background processes when sessions end
+          services.logind.killUserProcesses = false;
+
+          # Raise kernel-wide and per-process resource limits for dev workloads
+          boot.kernel.sysctl."fs.file-max" = 2097152;
+          systemd.extraConfig = ''
+            DefaultLimitNOFILE=1048576
+            DefaultLimitNPROC=65536
+            DefaultTasksMax=65536
+          '';
+          systemd.user.extraConfig = ''
+            DefaultLimitNOFILE=1048576
+            DefaultLimitNPROC=65536
+            DefaultTasksMax=65536
+          '';
+
+          # XFCE desktop (headless VM — no display manager, accessed via xrdp only)
+          services.xserver.enable = true;
+          services.xserver.dpi = 192;
+          services.xserver.desktopManager.xfce.enable = true;
+          services.xserver.displayManager.lightdm.enable = lib.mkForce false;
+          services.displayManager.enable = lib.mkForce false;
+
+          # xrdp for remote desktop access
+          services.xrdp.enable = true;
+          services.xrdp.defaultWindowManager = "startxfce4";
+          services.xrdp.openFirewall = true;
+
           services.tailscale = {
             enable = true;
+            package = pkgs.tailscale;
             extraUpFlags = ["--ssh"];
           };
+
+          virtualisation.docker.enable = true;
 
           programs.nix-ld.enable = true;
           programs.nix-ld.libraries = with pkgs; [
@@ -62,14 +94,21 @@
             htop
             gcc
             gnumake
-            nodejs
+            cmake
+            glibc.bin
+            nodejs_22
+            pnpm
             gh
             rsync
+            tailscale
+            unzip
+            unstable.bun
           ];
 
           # Home Manager
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
           home-manager.users.${user} = ./tidepool-home.nix;
           home-manager.extraSpecialArgs = {
             currentSystem = "x86_64-linux";
@@ -80,12 +119,6 @@
 
           # Shares
           microvm.shares = [
-            {
-              source = "/nix/store";
-              mountPoint = "/nix/.ro-store";
-              tag = "ro-store";
-              proto = "virtiofs";
-            }
             {
               source = "/home/${user}/code";
               mountPoint = "/home/${user}/code";

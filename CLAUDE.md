@@ -114,7 +114,6 @@ Module categories include:
 4. Dry-run risky changes (`--dry-run`, `home-manager switch -b backup`).
 
 ## Known Issues & Workarounds
-- `devenv` builds can fail; module kept disabled until flake channel resolves.
 - WSL setup occasionally needs multiple activation attempts; rerun `nixos-rebuild` if first run flakes.
 - Use `home-manager switch -b backup` when touching dotfiles to keep automatic backups.
 

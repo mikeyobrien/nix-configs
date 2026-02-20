@@ -21,8 +21,16 @@ in {
     programs.direnv = {
       enable = true;
       nix-direnv.enable = cfg.enableNixDirenv;
+      stdlib = ''
+        use_devenv() {
+          watch_file devenv.nix
+          watch_file devenv.lock
+          watch_file devenv.yaml
+          eval "$(devenv print-dev-env)"
+        }
+      '';
     };
-    
+
     home.packages = mkIf cfg.enableNixDirenv [ pkgs.nix-direnv ];
   };
 }

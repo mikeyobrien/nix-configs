@@ -12,7 +12,6 @@
         mas           # Mac App Store CLI
         dockutil      # Dock management
         pngpaste      # Paste images from clipboard
-        pkgs.unstable.devenv
       ];
     })
   ];

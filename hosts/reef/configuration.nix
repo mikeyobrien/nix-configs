@@ -5,10 +5,8 @@
     [ 
       ../default.nix
       ./hardware-configuration.nix
-      ./guacamole.nix
       ./k3s.nix
-      ./microvm.nix 
-      ./roon-server.nix
+      ./microvm.nix
       #./ups.nix
       # TODO: Unable to initialize capture methodAdd Cachix
     ];
@@ -33,7 +31,7 @@
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
-    "fs.file-max" = lib.mkForce 524288;
+    "fs.file-max" = lib.mkForce 2097152;
   };
 
   boot.kernelParams = [ "intel_iommu=on" "iommu=pt" ];

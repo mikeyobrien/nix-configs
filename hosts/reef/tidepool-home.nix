@@ -1,5 +1,6 @@
 {
   user,
+  config,
   lib,
   pkgs,
   ...
@@ -14,8 +15,13 @@
     homeDirectory = "/home/${user}";
   };
 
+  modules.development.uv.enable = true;
   modules.development.uvx.enable = true;
   llm-tools.enable = true;
 
-  home.packages = with pkgs; [nodejs];
+  home.sessionPath = ["$HOME/.npm-global/bin"];
+
+  home.packages = with pkgs; [nodejs_22 google-chrome python3];
+
+  # OpenClaw is managed outside Nix (npm + OpenClaw CLI).
 }
