@@ -315,9 +315,7 @@
     ];
   };
 
-  programs.anyrun = {
-    enable = true;
-  };
+  programs.anyrun.enable = true;
 
   home.file.".config/hypr/suspend.sh" = {
     text = ''
