@@ -32,6 +32,7 @@
     outputs.nixosModules.proxmox
     inputs.microvm.nixosModules.host
     inputs.agenix.nixosModules.default
+    inputs.hermes-agent.nixosModules.default
   ] else [];
 in
   systemFunc rec {

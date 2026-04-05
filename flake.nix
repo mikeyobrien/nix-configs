@@ -40,6 +40,8 @@
 
     jovian.url = "github:Jovian-Experiments/Jovian-NixOS";
     jovian.inputs.nixpkgs.follows = "nixpkgs";
+
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs = {
@@ -170,50 +172,28 @@
 
     # TODO: make lib helper `mkHome`
     homeConfigurations = {
-      "rainforest" = home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs {
-          system = "aarch64-darwin";
-          config.allowUnfree = true;
-        };
-        extraSpecialArgs = { inherit inputs outputs; };
-        modules = [
-          (import ./hosts/rainforest/home.nix {user = "mobrienv"; lib = nixpkgs.lib; currentSystem = "aarch64-darwin"; }) 
-        ];
+      "rainforest" = self.mkHome {
+        user = "mobrienv";
+        system = "aarch64-darwin";
+        isDarwin = true;
+        hostName = "rainforest";
       };
-      "wsl" = home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs {
-          system = "x86_64-linux";
-          config.allowUnfree = true;
-        };
-        extraSpecialArgs = { inherit inputs outputs; };
-        modules = [
-          (import ./hosts/wsl/home.nix {user = "mobrienv"; lib = nixpkgs.lib; }) 
-        ];
+      "wsl" = self.mkHome {
+        user = "mobrienv";
+        system = "x86_64-linux";
+        isWsl = true;
+        hostName = "wsl";
       };
-      "g14" = home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs {
-          system = "x86_64-linux";
-          config.allowUnfree = true;
-          overlays = [
-            overlays.modifications
-            overlays.additions
-            overlays.unstable-packages
-          ];
-        };
-        extraSpecialArgs = { inherit inputs outputs; };
-        modules = [
-          (import ./hosts/g14/home.nix {user = "arch"; lib = nixpkgs.lib; })
-        ];
+      "g14" = self.mkHome {
+        user = "arch";
+        system = "x86_64-linux";
+        hostName = "g14";
       };
-      "darwin" = home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs {
-          system = "aarch64-darwin";
-          config.allowUnfree = true;
-        };
-        extraSpecialArgs = { inherit inputs outputs; };
-        modules = [
-          (import ./hosts/darwin/home.nix {user = "mobrienv"; lib = nixpkgs.lib; })
-        ];
+      "darwin" = self.mkHome {
+        user = "mobrienv";
+        system = "aarch64-darwin";
+        isDarwin = true;
+        hostName = "darwin";
       };
     };
   };

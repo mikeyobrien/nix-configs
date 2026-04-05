@@ -127,6 +127,9 @@
             }
           ];
 
+          # Writable /nix/store overlay so nix-daemon runs and devenv can build
+          microvm.writableStoreOverlay = "/nix/.rw-store";
+
           # Resources (migrated from Arch VM)
           microvm.vcpu = 8;
           microvm.mem = 16384; # 16GB
@@ -134,7 +137,7 @@
             {
               image = "tidepool-root.img";
               mountPoint = "/";
-              size = 65536; # 64GB
+              size = 262144; # 256GB
             }
           ];
 

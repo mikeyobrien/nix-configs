@@ -214,34 +214,81 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
-  # Qwen3-Coder-Next via llama.cpp (OpenAI-compatible API on port 8001)
+  # Qwen3.5-27B via home startup script (OpenAI-compatible API on port 8001)
   systemd.services.llama-server = {
-    description = "llama.cpp server for Qwen3-Coder-Next";
+    description = "llama.cpp server for Qwen3.5-27B";
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     environment = {
       LD_LIBRARY_PATH = "/run/opengl-driver/lib";
+      CUDA_VISIBLE_DEVICES = "1";
     };
     serviceConfig = {
       Type = "simple";
       User = "mobrienv";
       ExecStart = ''
-        /home/mobrienv/llama.cpp/build/bin/llama-server \
-          --model /home/mobrienv/unsloth/Qwen3-Coder-Next-GGUF/Qwen3-Coder-Next-UD-Q4_K_XL.gguf \
-          --host 0.0.0.0 \
-          --port 8001 \
-          --alias Qwen3-Coder-Next \
-          --temp 1.0 \
-          --top-p 0.95 \
-          --min-p 0.01 \
-          --top-k 40 \
-          --ctx-size 32768 \
-          --n-gpu-layers 40
+        /run/current-system/sw/bin/bash /home/mobrienv/run-qwen3-coder.sh 27b server
       '';
       Restart = "on-failure";
       RestartSec = 10;
     };
   };
+
+  # Hermes Agent - local AI agent with hardened systemd service
+  services.hermes-agent = {
+    enable = true;
+    settings = {
+      model = {
+        base_url = "http://127.0.0.1:8002/v1";
+        default = "gemma-4-26b";
+      };
+      max_turns = 150;
+      toolsets = [ "all" ];
+      terminal = {
+        backend = "local";
+        timeout = 300;
+      };
+      compression = {
+        enabled = true;
+        threshold = 0.7;
+        summary_model = "gemma-4-26b";
+      };
+      memory = {
+        memory_enabled = true;
+        user_profile_enabled = true;
+      };
+      display = {
+        compact = false;
+        personality = "concise";
+      };
+      discord = {
+        require_mention = true;
+      };
+    };
+    environmentFiles = [
+      config.age.secrets.hermes-env.path
+    ];
+    user = "mobrienv";
+    group = "users";
+    createUser = false;
+    addToSystemPackages = true;
+  };
+
+  # Relax sandbox since running as user
+  systemd.services.hermes-agent.serviceConfig = {
+    ProtectSystem = lib.mkForce false;
+    ProtectHome = lib.mkForce false;
+    NoNewPrivileges = lib.mkForce false;
+    ReadWritePaths = lib.mkForce [];
+  };
+
+  age.secrets.hermes-env = {
+    file = ../../secrets/hermes-env.age;
+    owner = "mobrienv";
+    group = "users";
+    mode = "0400";
+  };
+
 
   systemd.sleep.extraConfig = ''
     AllowSuspend=no
@@ -260,7 +307,7 @@
   services.rpcbind.enable = true;  # Required for NFS
 
   fileSystems."/mnt/media" = {
-    device = "10.10.10.8:/mnt/user/media";
+    device = "192.168.1.8:/mnt/user/media";
     fsType = "nfs";
     options = [ "defaults" "x-systemd.automount" "noatime" ];
   };

@@ -14,4 +14,5 @@ in {
   "k3s_secret.age".publicKeys = systems;
   "extra-openai-models.age".publicKeys = systems;
   "frigate.age".publicKeys = [reef];
+  "hermes-env.age".publicKeys = [reef];
 }
