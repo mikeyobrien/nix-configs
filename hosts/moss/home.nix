@@ -198,10 +198,10 @@
         "keyboard-state" = {
           numlock = true;
           capslock = true;
-          format = " {name} {icon}";
+          format = " {name} {icon}";
           format-icons = {
             locked = "";
-            unlocked = "";
+            unlocked = "";
           };
         };
 
@@ -216,7 +216,7 @@
         };
 
         "sway/language" = {
-          format = " {}";
+          format = " {}";
         };
 
         "idle_inhibitor" = {
@@ -238,30 +238,30 @@
         };
 
         cpu = {
-          format = "{usage}% ";
+          format = "{usage}% ";
           tooltip = false;
         };
 
         memory = {
-          format = "{}% ";
+          format = "{}% ";
         };
 
         temperature = {
           critical-threshold = 80;
           format = "{temperatureC}°C {icon}";
-          format-icons = ["" "" ""];
+          format-icons = ["" "" ""];
         };
 
         backlight = {
           format = "{percent}% {icon}";
-          format-icons = ["" ""];
+          format-icons = ["" ""];
         };
 
         network = {
-          format-wifi = "{essid} ({signalStrength}%) ";
+          format-wifi = "{essid} ({signalStrength}%) ";
           format-ethernet = "Connected  ";
-          tooltip-format = "{ifname} via {gwaddr} ";
-          format-linked = "{ifname} (No IP) ";
+          tooltip-format = "{ifname} via {gwaddr} ";
+          format-linked = "{ifname} (No IP) ";
           format-disconnected = "Disconnected ⚠";
           format-alt = "{ifname}: {ipaddr}/{cidr}";
           on-click-right = "bash ~/.config/rofi/wifi_menu/rofi_wifi_menu";
@@ -269,19 +269,19 @@
 
         pulseaudio = {
           format = "{volume}% {icon}";
-          format-bluetooth = "{volume}% {icon}";
-          format-bluetooth-muted = "{icon} {format_source}";
+          format-bluetooth = "{volume}% {icon}";
+          format-bluetooth-muted = "{icon} {format_source}";
           format-muted = "{format_source}";
           format-source = "";
-          format-source-muted = "";
+          format-source-muted = "";
           format-icons = {
-            headphone = "";
-            hands-free = "";
-            headset = "";
-            phone = "";
+            headphone = "";
+            hands-free = "";
+            headset = "";
+            phone = "";
             portable = "";
             car = "";
-            default = ["" "" ""];
+            default = ["" "" ""];
           };
           on-click = "pavucontrol";
         };
@@ -291,7 +291,7 @@
           return-type = "json";
           max-length = 15;
           format-icons = {
-            spotify = " ";
+            spotify = " ";
             default = "M ";
           };
           escape = true;
@@ -326,20 +326,13 @@
     clipse
     rofi
     xfce.thunar
-
-    # screenshots
     grimblast
     slurp
-
     signal-desktop
-
-    # productivity
     ticktick
-
     discord
     google-chrome
     obsidian
     firefox
   ];
-
 }
