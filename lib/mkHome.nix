@@ -2,30 +2,35 @@
   nixpkgs,
   inputs,
   outputs,
-  overlays,
-}: {
-  # Helper to create home-manager configurations with standardized arguments
-  mkHome = { user, system, isDarwin ? false, isWsl ? false, hostName, ... }: 
-    inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = import nixpkgs {
-        system = system;
-        config.allowUnfree = true;
-        overlays = overlays;
-      };
-      extraSpecialArgs = {
-        inherit inputs outputs;
-        user = user;
+}: name: {
+  user,
+  system,
+  isDarwin ? false,
+  isWsl ? false,
+  hostName,
+  ...
+}:
+let
+  homeManagerModules = case system of
+    "x86_64-linux" => inputs.home-manager.nixosModules.home-manager;
+    "aarch64-darwin" => inputs.home-manager.darwinModules.home-manager;
+    "x86_64-darwin" => inputs.home-manager.darwinModules.home-manager;
+    _ => throw "Unsupported system for home-manager";
+in
+inputs.home-manager.lib.homeManagerConfiguration {
+  pkgs = nixpkgs.legacyPackages.${system};
+  modules = [
+    ../../home-manager/home.nix
+    ./hosts/${hostName}/home.nix
+    {
+      home-manager.extraSpecialArgs = {
         currentSystem = system;
+        user = user;
+        inputs = inputs;
+        outputs = outputs;
         isDarwin = isDarwin;
         isWsl = isWsl;
-        hostName = hostName;
       };
-      modules = [
-        (import ./hosts/${hostName}/home.nix { 
-          inherit user; 
-          lib = nixpkgs.lib; 
-          currentSystem = system; 
-        })
-      ];
-    };
+    }
+  ];
 }

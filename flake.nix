@@ -57,6 +57,9 @@
     mkSystem = import ./lib/mkSystem.nix {
       inherit nixpkgs inputs overlays outputs;
     };
+    mkHome = import ./lib/mkHome.nix {
+      inherit nixpkgs inputs outputs;
+    };
 
     systems = [
       "aarch64-linux"
@@ -67,9 +70,7 @@
 
     forAllSystems = nixpkgs.lib.genAttrs systems;
   in {
-    # TODO Find out whats the advantage of setting these as outputs
     packages = forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system}) // {
-      # Orchard VM runner for Mac Studio
       aarch64-darwin.orchardVM = self.nixosConfigurations.orchard.config.system.build.vm;
     };
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
@@ -104,7 +105,6 @@
         system = "x86_64-linux";
       };
 
-      # Orchard - K3s VM for Mac Studio (aarch64-darwin host)
       orchard = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
         modules = [
@@ -117,11 +117,7 @@
               overlays.unstable-packages
             ];
             nixpkgs.config.allowUnfree = true;
-
-            # Configure VM to use Darwin host packages
-            virtualisation.vmVariant.virtualisation.host.pkgs = 
-              nixpkgs.legacyPackages.aarch64-darwin;
-
+            virtualisation.vmVariant.virtualisation.host.pkgs = nixpkgs.legacyPackages.aarch64-darwin;
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.mobrienv = ./hosts/orchard/home.nix;
@@ -170,26 +166,25 @@
       ];
     };
 
-    # TODO: make lib helper `mkHome`
     homeConfigurations = {
-      "rainforest" = self.mkHome {
+      "rainforest" = mkHome {
         user = "mobrienv";
         system = "aarch64-darwin";
         isDarwin = true;
         hostName = "rainforest";
       };
-      "wsl" = self.mkHome {
+      "wsl" = mkHome {
         user = "mobrienv";
         system = "x86_64-linux";
         isWsl = true;
         hostName = "wsl";
       };
-      "g14" = self.mkHome {
+      "g14" = mkHome {
         user = "arch";
         system = "x86_64-linux";
         hostName = "g14";
       };
-      "darwin" = self.mkHome {
+      "darwin" = mkHome {
         user = "mobrienv";
         system = "aarch64-darwin";
         isDarwin = true;
