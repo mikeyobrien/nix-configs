@@ -20,7 +20,8 @@
   nixpkgs.config.allowUnfree = true;
 
   virtualisation.docker.enable = true;
-
+  virtualisation.libvirtd.enable = true;
+  virtualisation.username = "mobrienv";
   programs.kdeconnect = {
     enable = true;
     package = pkgs.valent;
@@ -159,12 +160,9 @@
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
-
-  virtualisation = {
-    enable = true;
-    username = "mobrienv";
-  };
-
+  virtualisation.docker.enable = true;
+  virtualisation.libvirtd.enable = true;
+  virtualisation.username = "mobrienv";
   services.flatpak.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?
