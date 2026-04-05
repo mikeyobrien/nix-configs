@@ -26,8 +26,6 @@
     enable = true;
     package = pkgs.valent;
   };
-
-  hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
   # TODO: refactor since this will be shared across hosts
@@ -163,7 +161,7 @@
   virtualisation.docker.enable = true;
   virtualisation.libvirtd.enable = true;
   virtualisation.username = "mobrienv";
-  services.flatpak.enable = true;
-
-  system.stateVersion = "24.05"; # Did you read the comment?
-}
+  programs.kdeconnect = {
+    enable = true;
+    package = pkgs.valent;
+  };
