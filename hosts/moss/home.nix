@@ -317,32 +317,6 @@
 
   programs.anyrun = {
     enable = true;
-    config = {
-      plugins = with inputs.anyrun.packages.${pkgs.system}; [
-        applications
-        rink
-        shell
-        symbols
-      ];
-      x = {fraction = 0.5;};
-      y = {fraction = 0.3;};
-      width = {fraction = 0.3;};
-      hideIcons = false;
-      ignoreExclusiveZones = false;
-      layer = "overlay";
-      hidePluginInfo = false;
-      closeOnClick = true;
-      showResultsImmediately = false;
-      maxEntries = null;
-    };
-    extraCss = builtins.readFile (./. + "/anyrun.css");
-    extraConfigFiles."applications.ron".text = ''
-      Config(
-        desktop_actions: false,
-        max_entries: 5,
-        terminal: Some("foot"),
-      )
-    '';
   };
 
   home.file.".config/hypr/suspend.sh" = {
