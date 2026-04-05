@@ -307,8 +307,8 @@
     ];
   };
 
-  programs.anyrun.enable = true;
-
+  # anyrun
+  # programs.anyrun.enable = true;
   home.file.".config/hypr/suspend.sh" = {
     text = ''
       #!/usr/bin/env bash
