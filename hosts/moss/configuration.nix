@@ -1,6 +1,5 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
 {
   pkgs,
   config,
@@ -26,6 +25,7 @@
     enable = true;
     package = pkgs.valent;
   };
+  hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
   # TODO: refactor since this will be shared across hosts
@@ -35,7 +35,7 @@
     home = "/home/mobrienv";
     extraGroups = ["docker" "wheel"];
     shell = pkgs.fish;
-    hashedPasswordFile = config.age.secrets.password.path;
+    hashedPasswordFile = config.password.path;
     openssh.authorizedKeys.keys = [];
   };
 
@@ -158,10 +158,8 @@
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
-  virtualisation.docker.enable = true;
-  virtualisation.libvirtd.enable = true;
-  virtualisation.username = "mobrienv";
-  programs.kdeconnect = {
-    enable = true;
-    package = pkgs.valent;
-  };
+
+  services.flatpak.enable = true;
+
+  system.stateVersion = "24.05"; # Did you read the comment?
+}
