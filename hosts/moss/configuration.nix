@@ -20,7 +20,6 @@
 
   virtualisation.docker.enable = true;
   virtualisation.libvirtd.enable = true;
-  virtualisation.username = "mobrienv";
   programs.kdeconnect = {
     enable = true;
     package = pkgs.valent;
