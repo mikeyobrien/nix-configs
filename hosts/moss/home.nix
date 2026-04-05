@@ -11,6 +11,8 @@
   home = {
     username = user;
     homeDirectory = "/home/${user}";
+  };
+
   # hyprland
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.systemd.extraCommands = [
