@@ -11,14 +11,7 @@
   home = {
     username = user;
     homeDirectory = "/home/${user}";
-  };
-
   # hyprland
-  programs.rofi = {
-    enable = true;
-    terminal = "${pkgs.alacritty}/bin/alacritty";
-  };
-
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.systemd.extraCommands = [
     "waybar"
@@ -45,13 +38,10 @@
         brightness = 1.0;
         contrast = 1.0;
         noise = 0.01;
-
         vibrancy = 0.2;
         vibrancy_darkness = 0.5;
-
         passes = 4;
         size = 7;
-
         popups = true;
         popups_ignorealpha = 0.2;
       };
