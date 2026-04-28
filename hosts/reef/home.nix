@@ -36,4 +36,7 @@
 
   # Enable uvx
   modules.development.uvx.enable = true;
+
+  # Enable tmux
+  modules.terminal.tmux.enable = true;
 }

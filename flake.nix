@@ -79,11 +79,6 @@
     overlays = overlays;
 
     nixosConfigurations = {
-      moss = mkSystem "moss" {
-        user = "mobrienv";
-        system = "x86_64-linux";
-      };
-
       wsl = mkSystem "wsl" {
         user = "mobrienv";
         system =  "x86_64-linux";

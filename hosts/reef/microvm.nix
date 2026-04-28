@@ -161,5 +161,113 @@
           };
         };
     };
+
+    dad-openclaw = {
+      autostart = true;
+      config = {
+        pkgs,
+        lib,
+        ...
+      }: {
+        system.stateVersion = "25.05";
+        networking.hostName = "dad-openclaw";
+        networking.firewall.enable = true;
+        networking.firewall.allowedTCPPorts = [22];
+
+        systemd.network.enable = true;
+        systemd.network.networks."20-lan" = {
+          matchConfig.Type = "ether";
+          networkConfig = {
+            Address = ["192.168.1.12/24"];
+            Gateway = "192.168.1.1";
+            DNS = ["192.168.1.1"];
+            DHCP = "no";
+          };
+        };
+
+        services.qemuGuest.enable = true;
+        services.openssh = {
+          enable = true;
+          openFirewall = true;
+          settings = {
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            PermitRootLogin = "no";
+          };
+        };
+
+        services.tailscale = {
+          enable = true;
+          package = pkgs.unstable.tailscale;
+        };
+
+        users.users.dad = {
+          isNormalUser = true;
+          home = "/home/dad";
+          createHome = true;
+          shell = pkgs.bashInteractive;
+          linger = true;
+          openssh.authorizedKeys.keys = [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHapvH7MvONEfueUfeOSkKHiePO+tE0h5QjvqsFvrf7+ mobrienv@reef"
+          ];
+        };
+
+        security.sudo = {
+          enable = true;
+          wheelNeedsPassword = true;
+          extraRules = [
+            {
+              users = ["dad"];
+              commands = [
+                {
+                  command = "/run/current-system/sw/bin/tailscale";
+                  options = ["NOPASSWD"];
+                }
+                {
+                  command = "${pkgs.unstable.tailscale}/bin/tailscale";
+                  options = ["NOPASSWD"];
+                }
+              ];
+            }
+          ];
+        };
+
+        systemd.tmpfiles.rules = [
+          "d /srv/openclaw-dad 0750 dad dad - -"
+          "d /srv/openclaw-dad/workspace 0700 dad dad - -"
+          "d /srv/openclaw-dad/data 0700 dad dad - -"
+        ];
+
+        environment.systemPackages = with pkgs; [
+          curl
+          git
+          jq
+          nodejs_22
+          unstable.tailscale
+        ];
+
+        zramSwap = {
+          enable = true;
+          memoryPercent = 25;
+        };
+
+        microvm.vcpu = 1;
+        microvm.mem = 2304;
+        microvm.volumes = [
+          {
+            image = "dad-openclaw-root.img";
+            mountPoint = "/";
+            size = 16384; # 16GB
+          }
+        ];
+        microvm.interfaces = [
+          {
+            id = "vm-dad-openclaw";
+            type = "tap";
+            mac = "02:00:00:00:00:12";
+          }
+        ];
+      };
+    };
   };
 }
