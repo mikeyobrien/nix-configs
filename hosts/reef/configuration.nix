@@ -5,7 +5,22 @@
   inputs,
   outputs,
   ...
-}: {
+}: let
+  nvidiaPackageWithPatchedP2p = let
+    stock = (pkgs.unstable.linuxKernel.packagesFor config.boot.kernelPackages.kernel).nvidiaPackages.production;
+  in
+    stock
+    // {
+      open = stock.open.overrideAttrs (_old: {
+        src = pkgs.fetchFromGitHub {
+          owner = "aikitoria";
+          repo = "open-gpu-kernel-modules";
+          rev = "595.58.03-p2p";
+          hash = "sha256-CarSHVli79pIH7Vm3weaBaGc/Gi0RldOEcryCEQpDbU=";
+        };
+      });
+    };
+in {
   imports = [
     ../default.nix
     ./hardware-configuration.nix
@@ -17,7 +32,7 @@
 
   nixpkgs.config.allowUnfree = true;
   # libolm is upstream-archived; needed for Matrix E2EE via matrix-nio
-  nixpkgs.config.permittedInsecurePackages = [ "olm-3.2.16" ];
+  nixpkgs.config.permittedInsecurePackages = ["olm-3.2.16"];
   nixpkgs.overlays = [
     outputs.overlays.modifications
     outputs.overlays.additions
@@ -33,6 +48,7 @@
   systemd.services.nix-daemon.serviceConfig.LimitNOFILE = 1048576;
 
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 3;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
   boot.kernel.sysctl = {
@@ -51,10 +67,24 @@
     "vfio_iommu_type1"
   ];
   boot.extraModprobeConfig = ''
-    options vfio-pci ids=1b21:0612,10de:2204
+    options vfio-pci ids=10de:2204
+    options nvidia NVreg_RegistryDwords="RMForceP2PType=1"
     options kvm_intel nested=1
     options vfio_iommu_type1 allow_unsafe_interrupts=1
+    options netconsole netconsole=6665@192.168.1.2/br0,6666@192.168.1.3/1c:1d:d3:d8:b5:a2
   '';
+
+  # Crash forensics (added 2026-07-06 after silent hard freezes under
+  # dual-3090 llama.cpp load — suspected patched-P2P driver hang):
+  # stream kernel log to rook (192.168.1.3, run `nc -ulk 6666` there)
+  # so a freeze's final messages survive off-box.
+  boot.kernelModules = ["netconsole"];
+  # iTCO hardware watchdog: systemd feeds it; a 60s kernel hard-freeze
+  # force-reboots instead of wedging until manual power-cycle.
+  systemd.watchdog = {
+    runtimeTime = "60s";
+    rebootTime = "120s";
+  };
 
   # Enable Graphics
   hardware.graphics = {
@@ -82,7 +112,7 @@
     # nixos-25.05's nvidiaPackages.latest pins to 570.x; vLLM nightly's CUDA 13
     # runtime requires driver >=580. Pull 595.58.03 from unstable but rebuild
     # the kernel module against this host's kernel.
-    package = (pkgs.unstable.linuxKernel.packagesFor config.boot.kernelPackages.kernel).nvidiaPackages.production;
+    package = nvidiaPackageWithPatchedP2p;
     open = true; # Use open source kernel modules for RTX/Turing+ GPUs
   };
 
@@ -239,7 +269,7 @@
     description = "Set NVIDIA GPU power limits (220W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
-    before = ["llama-server.service"];
+    before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -250,13 +280,52 @@
     };
   };
 
+  # club-3090 Docker stack: Qwen3.6-27B AutoRound INT4 + FP8 MTP (:8010).
+  # Docker's own restart policy can race the NVIDIA CDI generator during boot,
+  # leaving the container exited with "could not select device driver cdi".
+  # Start it after CDI and Docker are ready so reef comes back serving.
+  systemd.services.club3090-qwen36-docker = {
+    description = "club-3090 Qwen3.6-27B Docker vLLM stack (:8010)";
+    after = [
+      "network-online.target"
+      "docker.service"
+      "nvidia-container-toolkit-cdi-generator.service"
+      "nvidia-power-limit.service"
+    ];
+    wants = ["network-online.target"];
+    requires = [
+      "docker.service"
+      "nvidia-container-toolkit-cdi-generator.service"
+    ];
+    # Manual-start: replaced on :8010 by ornith-server (llama.cpp Ornith-35B).
+    # Was wantedBy multi-user.target; dropped so it can't reclaim :8010/GPUs on boot.
+    wantedBy = [];
+    conflicts = ["qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
+    path = [pkgs.docker pkgs.bash pkgs.coreutils];
+    environment = {
+      NVLINK_MODE = "pcie_p2p";
+      NCCL_P2P_LEVEL = "PHB";
+      ESTATE_PORT = "8010";
+    };
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      WorkingDirectory = "/home/mobrienv/club-3090/models/qwen3.6-27b/vllm/compose/dual/autoround-int4";
+      ExecStart = "${pkgs.docker}/bin/docker compose -f fp8-mtp.yml -f docker-compose.override.yml up -d";
+      ExecStop = "${pkgs.docker}/bin/docker compose -f fp8-mtp.yml -f docker-compose.override.yml stop";
+      Restart = "on-failure";
+      RestartSec = 15;
+      TimeoutStartSec = 120;
+      TimeoutStopSec = 60;
+    };
+  };
+
   # llama.cpp: Qwen3.6-35B-A3B UD-Q8_K_XL on dual 3090, 262K q8 KV (:8001)
   systemd.services.llama-server = {
     description = "llama.cpp Qwen3.6-35B-A3B Q8_K_XL (dual 3090, 262K :8001)";
     after = ["network.target"];
-    conflicts = [ "dflash-server.service" ];
-    # Manual-start; dflash-server is the boot default. Bring this up with
-    #   sudo systemctl stop dflash-server && sudo systemctl start llama-server
+    conflicts = ["qwen36-vllm.service" "dflash-server.service"];
+    # Manual-start; stop any Docker LLM stack on :8010 before starting this
     # when you want the 35B Q8 instead.
     environment = {
       LD_LIBRARY_PATH = "/run/opengl-driver/lib";
@@ -272,6 +341,28 @@
     };
   };
 
+  # llama.cpp: Ornith-1.0-35B Q4_K_M on dual 3090, 2x 262K q4_0 KV (:8010)
+  # Auto-start replacement for the club3090 Docker stack on :8010.
+  # start-ornith.sh execs llama-server (sets LD_LIBRARY_PATH itself); systemd
+  # tracks that PID and SIGTERM stops it cleanly.
+  systemd.services.ornith-server = {
+    description = "llama.cpp Ornith-1.0-35B Q4_K_M (dual 3090, 2x262K :8010)";
+    after = ["network.target" "nvidia-power-limit.service"];
+    wantedBy = ["multi-user.target"];
+    conflicts = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service"];
+    environment = {
+      LD_LIBRARY_PATH = "/run/opengl-driver/lib";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "mobrienv";
+      ExecStart = "/run/current-system/sw/bin/bash /home/mobrienv/models/ornith/start-ornith.sh";
+      Restart = "on-failure";
+      RestartSec = 10;
+      TimeoutStopSec = 60;
+    };
+  };
+
   # vLLM: Qwen3.6-27B FP8 full-context serving, dual 3090 (:8000)
   # Calls run-systemd.sh which exports pinned /nix/store paths (CUDA toolkit,
   # cudnn, nccl, gcc-lib, zlib, python) plus TRITON_LIBCUDA_PATH and the
@@ -281,9 +372,9 @@
   # GC roots for the pinned paths live in /nix/var/nix/gcroots/per-user/mobrienv/.
   systemd.services.dflash-server = {
     description = "vLLM Qwen3.6-27B FP8 full-context (dual 3090, 262144 ctx, :8000)";
-    after = [ "network.target" "nvidia-power-limit.service" ];
-    conflicts = [ "llama-server.service" ];
-    wantedBy = [ ];   # manual-start; replaced by qwen36-dual-3090 docker stack on :8010
+    after = ["network.target" "nvidia-power-limit.service"];
+    conflicts = ["qwen36-vllm.service" "llama-server.service"];
+    wantedBy = []; # manual-start; replaced by qwen36-dual-3090 docker stack on :8010
 
     serviceConfig = {
       Type = "simple";
@@ -293,6 +384,135 @@
       RestartSec = 10;
       TimeoutStopSec = 60;
       KillMode = "control-group";
+    };
+  };
+
+  # vLLM 0.23 host-native Qwen3.6-27B service (:8010).
+  #
+  # This is intentionally more conservative than club-3090's Docker default:
+  # no MTP speculation, no prefix caching, generic fp8 KV, and 4096 batched
+  # tokens. On reef, the Docker v0.22.0 fp8/MTP path repeatedly wedged with
+  # EngineDeadError: sample_tokens timed out; forcing Triton attention exposed
+  # separate fp8_e5m2 / fp8e4nv compile failures on Ampere. This host-native
+  # venv path passed verify-full and the canonical bench without that failure.
+  # Host-native v0.23 AutoRound+MTP was also rejected: ~87/111 TPS, but
+  # verify-stress reproduced sample_tokens timeout / EngineDeadError.
+  # Keep gpu_memory_utilization at 0.97, not 0.98: 0.98 functionally filled
+  # to 240,635 tokens but left only 918 MiB free at the ceiling ladder, below
+  # verify-stress's 1 GiB agent-overhead margin.
+  systemd.services.qwen36-vllm = let
+    cuda = pkgs.cudaPackages.cudatoolkit;
+    nvcc = pkgs.cudaPackages.cuda_nvcc;
+    qwen36Vllm = pkgs.writeShellScript "qwen36-vllm" ''
+      set -euo pipefail
+
+      export CUDA_HOME=${cuda}
+      export PATH=${pkgs.bashInteractive}/bin:${pkgs.coreutils}/bin:${nvcc}/bin:${pkgs.gcc}/bin:${pkgs.ninja}/bin:${cuda}/bin:/run/current-system/sw/bin
+      export LD_LIBRARY_PATH=${pkgs.gcc.cc.lib}/lib:${cuda}/lib:/run/opengl-driver/lib
+      export LIBRARY_PATH=${cuda}/lib:/run/opengl-driver/lib
+      export TRITON_LIBCUDA_PATH=/run/opengl-driver/lib
+
+      export VLLM_WORKER_MULTIPROC_METHOD=spawn
+      export VLLM_NO_USAGE_STATS=1
+      export VLLM_ALLOW_LONG_MAX_MODEL_LEN=1
+      unset VLLM_USE_FLASHINFER_SAMPLER || true
+      export OMP_NUM_THREADS=1
+      export NCCL_CUMEM_ENABLE=0
+      export NCCL_P2P_DISABLE=1
+      export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
+
+      cd /home/mobrienv/club-3090
+      exec /home/mobrienv/.venvs/qwen-vllm-autoround/bin/vllm serve /home/mobrienv/club-3090/models-cache/cyankiwi-qwen3.6-27b-awq-bf16-int4 \
+        --served-model-name qwen3.6-27b-autoround cyankiwi-qwen3.6-27b-awq-bf16-int4 \
+        --dtype float16 \
+        --tensor-parallel-size 2 \
+        --pipeline-parallel-size 1 \
+        --max-model-len 262144 \
+        --gpu-memory-utilization 0.97 \
+        --mm-encoder-tp-mode data \
+        --kv-cache-dtype fp8 \
+        --max-num-seqs 2 \
+        --max-num-batched-tokens 4096 \
+        --trust-remote-code \
+        --reasoning-parser qwen3 \
+        --default-chat-template-kwargs '{"enable_thinking": false}' \
+        --enable-auto-tool-choice \
+        --tool-call-parser qwen3_coder \
+        --enable-chunked-prefill \
+        --performance-mode interactivity \
+        --override-generation-config '{"temperature":0.6,"top_p":0.95,"top_k":20,"min_p":0.0,"repetition_penalty":1.0}' \
+        --disable-custom-all-reduce \
+        --host 0.0.0.0 \
+        --port 8010
+    '';
+  in {
+    description = "vLLM cyankiwi Qwen3.6-27B AWQ/BF16/INT4 (dual 3090, 262K :8010)";
+    after = ["network-online.target" "nvidia-power-limit.service"];
+    wants = ["network-online.target"];
+    conflicts = ["dflash-server.service" "llama-server.service"];
+    wantedBy = []; # manual-start; Docker club-3090 owns :8010 on reef
+    startLimitIntervalSec = 900;
+    startLimitBurst = 3;
+
+    serviceConfig = {
+      Type = "simple";
+      User = "mobrienv";
+      WorkingDirectory = "/home/mobrienv/club-3090";
+      ExecStartPre = [
+        "${pkgs.coreutils}/bin/test -x /home/mobrienv/.venvs/qwen-vllm-autoround/bin/vllm"
+        "${pkgs.coreutils}/bin/test -d /home/mobrienv/club-3090/models-cache/cyankiwi-qwen3.6-27b-awq-bf16-int4"
+      ];
+      ExecStart = "${qwen36Vllm}";
+      Restart = "always";
+      RestartSec = 30;
+      TimeoutStopSec = 90;
+      KillMode = "control-group";
+      LimitNOFILE = 1048576;
+    };
+  };
+
+  systemd.services.qwen36-vllm-watchdog = {
+    description = "Restart qwen36-vllm if the OpenAI endpoint stops answering";
+    after = ["qwen36-vllm.service"];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set -euo pipefail
+
+      state="$(${pkgs.systemd}/bin/systemctl show qwen36-vllm.service --property=ActiveState --value || true)"
+
+      case "$state" in
+        activating|deactivating)
+          exit 0
+          ;;
+        failed|inactive|"")
+          ${pkgs.systemd}/bin/systemctl reset-failed qwen36-vllm.service || true
+          ${pkgs.systemd}/bin/systemctl restart qwen36-vllm.service
+          exit 0
+          ;;
+      esac
+
+      active_usec="$(${pkgs.systemd}/bin/systemctl show qwen36-vllm.service --property=ActiveEnterTimestampMonotonic --value || echo 0)"
+      read -r uptime _ < /proc/uptime
+      uptime_sec="''${uptime%%.*}"
+      active_sec="$((active_usec / 1000000))"
+      if [ "$active_sec" -gt 0 ] && [ "$((uptime_sec - active_sec))" -lt 600 ]; then
+        exit 0
+      fi
+
+      if ${pkgs.curl}/bin/curl --noproxy '*' -fsS --max-time 5 http://127.0.0.1:8010/health >/dev/null; then
+        exit 0
+      fi
+
+      ${pkgs.systemd}/bin/systemctl restart qwen36-vllm.service
+    '';
+  };
+
+  systemd.timers.qwen36-vllm-watchdog = {
+    wantedBy = []; # manual-start with qwen36-vllm
+    timerConfig = {
+      OnBootSec = "10min";
+      OnUnitActiveSec = "10min";
+      Unit = "qwen36-vllm-watchdog.service";
     };
   };
 
@@ -312,7 +532,7 @@
         # which ABI-conflicts with Hermes's own cffi 2.0.0. Google brotli is
         # pure C and conflict-free; sitecustomize below patches aiohttp 3.13.3
         # to call google brotli's Decompressor.process() with one arg.
-        [ ps.matrix-nio ps.brotli ]);
+        [ps.matrix-nio ps.brotli]);
       # aiohttp 3.13.3 (bundled in Hermes's own venv) calls
       # brotli.Decompressor().decompress(data, max_length) — but neither
       # google-brotli nor brotlicffi support max_length. Patch
@@ -329,7 +549,7 @@
             import sys
             print("sitecustomize brotli patch failed:", _e, file=sys.stderr)
       '';
-      matrixPyEnv = pkgs.runCommand "matrix-py-env-compat" { } ''
+      matrixPyEnv = pkgs.runCommand "matrix-py-env-compat" {} ''
         # Exclude any package Hermes's own venv already has that would ABI-
         # conflict: aiohttp (version skew + brotli), pycryptodome/Crypto, cffi,
         # cryptography. Those get picked up from Hermes's venv on sys.path.
@@ -348,21 +568,22 @@
         install -m 0644 ${brotliFixSitecustomize} "$OUTSP/sitecustomize.py"
       '';
       origHermes = inputs.hermes-agent.packages.${pkgs.system}.default;
-    in pkgs.symlinkJoin {
-      name = "hermes-agent-with-matrix";
-      paths = [ origHermes ];
-      buildInputs = [ pkgs.makeWrapper ];
-      postBuild = ''
-        for bin in hermes hermes-agent hermes-acp; do
-          if [ -L "$out/bin/$bin" ]; then
-            target=$(readlink -f "$out/bin/$bin")
-            rm "$out/bin/$bin"
-            makeWrapper "$target" "$out/bin/$bin" \
-              --prefix PYTHONPATH : "${matrixPyEnv}/lib/python3.11/site-packages"
-          fi
-        done
-      '';
-    };
+    in
+      pkgs.symlinkJoin {
+        name = "hermes-agent-with-matrix";
+        paths = [origHermes];
+        buildInputs = [pkgs.makeWrapper];
+        postBuild = ''
+          for bin in hermes hermes-agent hermes-acp; do
+            if [ -L "$out/bin/$bin" ]; then
+              target=$(readlink -f "$out/bin/$bin")
+              rm "$out/bin/$bin"
+              makeWrapper "$target" "$out/bin/$bin" \
+                --prefix PYTHONPATH : "${matrixPyEnv}/lib/python3.11/site-packages"
+            fi
+          done
+        '';
+      };
     settings = {
       model = {
         base_url = "http://127.0.0.1:8002/v1";
@@ -440,6 +661,62 @@
 
   # NFS client configuration
   services.rpcbind.enable = true; # Required for NFS
+
+  # Synology DS218+ NFS exports. These are automounts, not boot-critical
+  # mounts: reef/k3s should boot cleanly even when the NAS is unavailable.
+  fileSystems."/mnt/synology/backups" = {
+    device = "192.168.1.83:/volume1/reef-host-backups";
+    fsType = "nfs";
+    options = [
+      "noauto"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=600"
+      "_netdev"
+      "nofail"
+      "noatime"
+      "nfsvers=3"
+      "proto=tcp"
+      "hard"
+      "timeo=600"
+      "retrans=2"
+    ];
+  };
+
+  fileSystems."/mnt/synology/media" = {
+    device = "192.168.1.83:/volume1/media-archive";
+    fsType = "nfs";
+    options = [
+      "noauto"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=600"
+      "_netdev"
+      "nofail"
+      "noatime"
+      "nfsvers=3"
+      "proto=tcp"
+      "hard"
+      "timeo=600"
+      "retrans=2"
+    ];
+  };
+
+  fileSystems."/mnt/synology/exports" = {
+    device = "192.168.1.83:/volume1/app-exports";
+    fsType = "nfs";
+    options = [
+      "noauto"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=600"
+      "_netdev"
+      "nofail"
+      "noatime"
+      "nfsvers=3"
+      "proto=tcp"
+      "hard"
+      "timeo=600"
+      "retrans=2"
+    ];
+  };
 
   fileSystems."/mnt/media" = {
     device = "192.168.1.8:/mnt/user/media";
