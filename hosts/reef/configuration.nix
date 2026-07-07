@@ -280,12 +280,16 @@ in {
     };
   };
 
-  # club-3090 Docker stack: Qwen3.6-27B AutoRound INT4 + FP8 MTP (:8010).
+  # club-3090 Docker stack: Qwen3.6-35B-A3B AutoRound INT4 (:8010).
+  # Switched from the 27B AutoRound compose 2026-07-07 (same club-3090 base:
+  # pinned vLLM v0.22.0, NCCL_P2P_DISABLE=1 baked in, repo-validated fp8.yml —
+  # 262K ctx, MTP intentionally off on this MoE). 27B compose remains on disk
+  # for manual rollback (fp8-mtp.yml in the qwen3.6-27b dir).
   # Docker's own restart policy can race the NVIDIA CDI generator during boot,
   # leaving the container exited with "could not select device driver cdi".
   # Start it after CDI and Docker are ready so reef comes back serving.
   systemd.services.club3090-qwen36-docker = {
-    description = "club-3090 Qwen3.6-27B Docker vLLM stack (:8010)";
+    description = "club-3090 Qwen3.6-35B-A3B AutoRound Docker vLLM stack (:8010)";
     after = [
       "network-online.target"
       "docker.service"
@@ -297,22 +301,21 @@ in {
       "docker.service"
       "nvidia-container-toolkit-cdi-generator.service"
     ];
-    # Manual-start: replaced on :8010 by ornith-server (llama.cpp Ornith-35B).
-    # Was wantedBy multi-user.target; dropped so it can't reclaim :8010/GPUs on boot.
-    wantedBy = [];
+    wantedBy = ["multi-user.target"];
     conflicts = ["qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
     path = [pkgs.docker pkgs.bash pkgs.coreutils];
     environment = {
       NVLINK_MODE = "pcie_p2p";
       NCCL_P2P_LEVEL = "PHB";
       ESTATE_PORT = "8010";
+      MAX_NUM_SEQS = "2";
     };
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      WorkingDirectory = "/home/mobrienv/club-3090/models/qwen3.6-27b/vllm/compose/dual/autoround-int4";
-      ExecStart = "${pkgs.docker}/bin/docker compose -f fp8-mtp.yml -f docker-compose.override.yml up -d";
-      ExecStop = "${pkgs.docker}/bin/docker compose -f fp8-mtp.yml -f docker-compose.override.yml stop";
+      WorkingDirectory = "/home/mobrienv/club-3090/models/qwen3.6-35b-a3b/vllm/compose/dual/autoround-int4";
+      ExecStart = "${pkgs.docker}/bin/docker compose -f fp8.yml -f docker-compose.override.yml up -d";
+      ExecStop = "${pkgs.docker}/bin/docker compose -f fp8.yml -f docker-compose.override.yml stop";
       Restart = "on-failure";
       RestartSec = 15;
       TimeoutStartSec = 120;
@@ -342,13 +345,15 @@ in {
   };
 
   # llama.cpp: Ornith-1.0-35B Q4_K_M on dual 3090, 2x 262K q4_0 KV (:8010)
-  # Auto-start replacement for the club3090 Docker stack on :8010.
+  # Manual-start since 2026-07-07: boot default on :8010 is the club3090
+  # 35B-A3B AutoRound vLLM stack. Start this instead with
+  # `systemctl start ornith-server` (conflicts stop the docker stack).
   # start-ornith.sh execs llama-server (sets LD_LIBRARY_PATH itself); systemd
   # tracks that PID and SIGTERM stops it cleanly.
   systemd.services.ornith-server = {
     description = "llama.cpp Ornith-1.0-35B Q4_K_M (dual 3090, 2x262K :8010)";
     after = ["network.target" "nvidia-power-limit.service"];
-    wantedBy = ["multi-user.target"];
+    wantedBy = [];
     conflicts = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service"];
     environment = {
       LD_LIBRARY_PATH = "/run/opengl-driver/lib";
