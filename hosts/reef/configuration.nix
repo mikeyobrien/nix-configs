@@ -5,22 +5,7 @@
   inputs,
   outputs,
   ...
-}: let
-  nvidiaPackageWithPatchedP2p = let
-    stock = (pkgs.unstable.linuxKernel.packagesFor config.boot.kernelPackages.kernel).nvidiaPackages.production;
-  in
-    stock
-    // {
-      open = stock.open.overrideAttrs (_old: {
-        src = pkgs.fetchFromGitHub {
-          owner = "aikitoria";
-          repo = "open-gpu-kernel-modules";
-          rev = "595.58.03-p2p";
-          hash = "sha256-CarSHVli79pIH7Vm3weaBaGc/Gi0RldOEcryCEQpDbU=";
-        };
-      });
-    };
-in {
+}: {
   imports = [
     ../default.nix
     ./hardware-configuration.nix
@@ -68,7 +53,6 @@ in {
   ];
   boot.extraModprobeConfig = ''
     options vfio-pci ids=10de:2204
-    options nvidia NVreg_RegistryDwords="RMForceP2PType=1"
     options kvm_intel nested=1
     options vfio_iommu_type1 allow_unsafe_interrupts=1
     options netconsole netconsole=6665@192.168.1.2/br0,6666@192.168.1.3/1c:1d:d3:d8:b5:a2
@@ -112,7 +96,12 @@ in {
     # nixos-25.05's nvidiaPackages.latest pins to 570.x; vLLM nightly's CUDA 13
     # runtime requires driver >=580. Pull 595.58.03 from unstable but rebuild
     # the kernel module against this host's kernel.
-    package = nvidiaPackageWithPatchedP2p;
+    # 2026-07-07: REVERTED the aikitoria 595.58.03-p2p patched open module.
+    # It went live (uncommitted) 2026-06-21 and correlates 1:1 with the return
+    # of silent hard freezes (Jun 28, Jul 6, Jul 7) after 8 stable weeks on
+    # stock; nothing uses GPU P2P anymore (vLLM: NCCL_P2P_DISABLE=1 +
+    # --disable-custom-all-reduce; llama.cpp: GGML_CUDA_NO_PEER_COPY build).
+    package = (pkgs.unstable.linuxKernel.packagesFor config.boot.kernelPackages.kernel).nvidiaPackages.production;
     open = true; # Use open source kernel modules for RTX/Turing+ GPUs
   };
 
