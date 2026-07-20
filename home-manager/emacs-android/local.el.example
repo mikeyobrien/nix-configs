@@ -1,0 +1,8 @@
+;;; local.el --- Device-local private settings -*- lexical-binding: t; -*-
+
+;; Copy this file to ~/.emacs.d/local.el and keep it out of Git.
+;; Alternatively, export OBSIDIAN_VAULT before launching Emacs.
+(setq my-obsidian-vault-directory
+      "/path/to/your/obsidian/vault")
+
+;;; local.el ends here

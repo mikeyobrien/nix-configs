@@ -16,6 +16,8 @@ A modular NixOS and Home Manager configuration repository supporting multiple sy
 │   ├── rhizome/             # NixOS system
 │   ├── wsl/                 # Windows Subsystem for Linux
 │   └── droid/               # Android (Nix-on-Droid)
+├── home-manager/
+│   └── emacs-android/       # Native Android Emacs dotfiles and installer
 ├── modules/                  # Reusable modules
 │   ├── home-manager/        # Home Manager modules
 │   │   ├── core/           # Essential packages and utilities
