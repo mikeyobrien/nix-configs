@@ -27,6 +27,10 @@
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
     trusted-users = ["root" "mobrienv"];
+    # Cap build parallelism: unbounded builds starve the vLLM workers on :8010,
+    # whose engine dies on shm_broadcast timeout when CPU/RAM are exhausted.
+    max-jobs = 4;
+    cores = 4;
   };
 
   # Increase nix-daemon file descriptor limit for large builds (microVM chroot sandboxing)
