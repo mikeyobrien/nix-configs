@@ -239,10 +239,16 @@
         ];
 
         environment.systemPackages = with pkgs; [
+          chromium
           curl
           git
           jq
           nodejs_22
+          (python3.withPackages (ps:
+            with ps; [
+              beautifulsoup4
+              requests
+            ]))
           unstable.tailscale
         ];
 
@@ -265,6 +271,267 @@
             id = "vm-dad-openclaw";
             type = "tap";
             mac = "02:00:00:00:00:12";
+          }
+        ];
+      };
+    };
+
+    maria-hermes = {
+      autostart = true;
+      config = {
+        pkgs,
+        lib,
+        ...
+      }: let
+        hermesSoul = pkgs.writeText "maria-hermes-SOUL.md" ''
+          # Maria's Hermes Agent
+
+          You are Maria's Hermes agent. Be concise, practical, and careful with actions that affect files, accounts, credentials, or other people's systems.
+        '';
+      in {
+        imports = [
+          inputs.hermes-agent.nixosModules.default
+        ];
+
+        system.stateVersion = "25.05";
+        networking.hostName = "maria-hermes";
+        networking.firewall.enable = true;
+        networking.firewall.allowedTCPPorts = [22];
+
+        systemd.network.enable = true;
+        systemd.network.networks."20-lan" = {
+          matchConfig.Type = "ether";
+          networkConfig = {
+            Address = ["192.168.1.11/24"];
+            Gateway = "192.168.1.1";
+            DNS = ["192.168.1.1"];
+            DHCP = "no";
+          };
+        };
+
+        services.qemuGuest.enable = true;
+        services.openssh = {
+          enable = true;
+          openFirewall = true;
+          settings = {
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            PermitRootLogin = "no";
+          };
+        };
+
+        services.tailscale = {
+          enable = true;
+          package = pkgs.unstable.tailscale;
+        };
+
+        users.users.maria = {
+          isNormalUser = true;
+          home = "/home/maria";
+          createHome = true;
+          shell = pkgs.bashInteractive;
+          linger = true;
+          extraGroups = ["wheel" "hermes"];
+          openssh.authorizedKeys.keys = [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHapvH7MvONEfueUfeOSkKHiePO+tE0h5QjvqsFvrf7+ mobrienv@reef"
+          ];
+        };
+
+        security.sudo = {
+          enable = true;
+          wheelNeedsPassword = false;
+        };
+
+        services.hermes-agent = {
+          enable = true;
+          addToSystemPackages = true;
+          extraArgs = ["run" "--replace"];
+          environment = {
+            HERMES_INFERENCE_PROVIDER = "custom";
+          };
+          environmentFiles = [
+            "/var/lib/hermes/.hermes/local.env"
+          ];
+          settings = {
+            model = {
+              provider = "custom";
+              base_url = "http://192.168.1.2:8010/v1";
+              default = "qwen3.6-27b-autoround";
+              api_mode = "chat_completions";
+            };
+            max_turns = 80;
+            toolsets = ["all"];
+            terminal = {
+              backend = "local";
+              timeout = 300;
+            };
+            compression = {
+              enabled = true;
+              threshold = 0.7;
+              summary_model = "qwen3.6-27b-autoround";
+            };
+            memory = {
+              memory_enabled = true;
+              user_profile_enabled = true;
+            };
+            display = {
+              compact = false;
+              personality = "concise";
+            };
+          };
+        };
+
+        system.activationScripts."maria-hermes-soul" = lib.stringAfter ["hermes-agent-setup"] ''
+          install -o hermes -g hermes -m 0640 ${hermesSoul} /var/lib/hermes/.hermes/SOUL.md
+        '';
+
+        environment.systemPackages = with pkgs; [
+          curl
+          git
+          htop
+          jq
+          unstable.tailscale
+          vim
+        ];
+
+        zramSwap = {
+          enable = true;
+          memoryPercent = 25;
+        };
+
+        microvm.vcpu = 2;
+        microvm.mem = 4096;
+        microvm.shares = [
+          {
+            source = "/nix/store";
+            mountPoint = "/nix/store";
+            tag = "ro-store";
+            proto = "virtiofs";
+            readOnly = true;
+          }
+        ];
+        microvm.volumes = [
+          {
+            image = "maria-hermes-root.img";
+            mountPoint = "/";
+            size = 32768; # 32GB
+          }
+        ];
+        microvm.interfaces = [
+          {
+            id = "vm-maria-hermes";
+            type = "tap";
+            mac = "02:00:00:00:00:11";
+          }
+        ];
+      };
+    };
+
+    bredren = {
+      autostart = true;
+      config = {pkgs, ...}: {
+        system.stateVersion = "25.05";
+        networking.hostName = "bredren";
+        networking.firewall.enable = true;
+        networking.firewall.allowedTCPPorts = [22];
+
+        systemd.network.enable = true;
+        systemd.network.networks."20-lan" = {
+          matchConfig.Type = "ether";
+          networkConfig = {
+            Address = ["192.168.1.14/24"];
+            Gateway = "192.168.1.1";
+            DNS = ["192.168.1.1"];
+            DHCP = "no";
+          };
+        };
+
+        nix.settings = {
+          experimental-features = ["nix-command" "flakes"];
+          trusted-users = ["root"];
+        };
+
+        services.qemuGuest.enable = true;
+        services.openssh = {
+          enable = true;
+          openFirewall = true;
+          settings = {
+            PasswordAuthentication = false;
+            KbdInteractiveAuthentication = false;
+            PermitRootLogin = "no";
+            X11Forwarding = false;
+            AllowUsers = ["bredren"];
+          };
+        };
+
+        # Keep Hermes SSH backend shells alive across ControlMaster disconnects.
+        services.logind.killUserProcesses = false;
+
+        users.users.bredren = {
+          isNormalUser = true;
+          home = "/home/bredren";
+          createHome = true;
+          shell = pkgs.bashInteractive;
+          linger = true;
+          openssh.authorizedKeys.keys = [
+            # Local Mac key for direct Hermes SSH backend access.
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHWO0Zu4ZMIc9YqrnIE8+fovrCVmeTbI+8vai1biF6Go"
+            # Reef key for host-local maintenance and ProxyJump workflows.
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHapvH7MvONEfueUfeOSkKHiePO+tE0h5QjvqsFvrf7+ mobrienv@reef"
+          ];
+        };
+
+        security.sudo = {
+          enable = true;
+          wheelNeedsPassword = true;
+        };
+
+        systemd.tmpfiles.rules = [
+          "d /home/bredren/workspace 0750 bredren users - -"
+        ];
+
+        environment.systemPackages = with pkgs; [
+          bashInteractive
+          coreutils
+          curl
+          fd
+          findutils
+          gawk
+          git
+          gnugrep
+          gnused
+          gzip
+          htop
+          jq
+          nodejs_22
+          openssh
+          python3
+          ripgrep
+          rsync
+          gnutar
+          unzip
+          vim
+        ];
+
+        zramSwap = {
+          enable = true;
+          memoryPercent = 25;
+        };
+
+        microvm.vcpu = 1;
+        microvm.mem = 2304;
+        microvm.volumes = [
+          {
+            image = "bredren-root.img";
+            mountPoint = "/";
+            size = 16384; # 16GB
+          }
+        ];
+        microvm.interfaces = [
+          {
+            id = "vm-bredren";
+            type = "tap";
+            mac = "02:00:00:00:00:14";
           }
         ];
       };

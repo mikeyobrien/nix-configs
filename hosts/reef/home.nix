@@ -30,7 +30,7 @@
   home.packages = with pkgs; [
     google-chrome
     kdePackages.konsole
-    nodejs
+    nodejs_24
     way-displays
   ];
 
