@@ -301,7 +301,7 @@
       NVLINK_MODE = "pcie_p2p";
       NCCL_P2P_LEVEL = "PHB";
       ESTATE_PORT = "8010";
-      MAX_NUM_SEQS = "2";
+      MAX_NUM_SEQS = "8";
     };
     serviceConfig = {
       Type = "oneshot";
@@ -470,26 +470,26 @@
   };
 
   systemd.services.qwen36-vllm-watchdog = {
-    description = "Restart qwen36-vllm if the OpenAI endpoint stops answering";
-    after = ["qwen36-vllm.service"];
+    description = "Restart the club-3090 vLLM container if the OpenAI endpoint stops answering";
+    after = ["club3090-qwen36-docker.service"];
     serviceConfig.Type = "oneshot";
     script = ''
       set -euo pipefail
 
-      state="$(${pkgs.systemd}/bin/systemctl show qwen36-vllm.service --property=ActiveState --value || true)"
+      state="$(${pkgs.systemd}/bin/systemctl show club3090-qwen36-docker.service --property=ActiveState --value || true)"
 
       case "$state" in
         activating|deactivating)
           exit 0
           ;;
         failed|inactive|"")
-          ${pkgs.systemd}/bin/systemctl reset-failed qwen36-vllm.service || true
-          ${pkgs.systemd}/bin/systemctl restart qwen36-vllm.service
+          ${pkgs.systemd}/bin/systemctl reset-failed club3090-qwen36-docker.service || true
+          ${pkgs.systemd}/bin/systemctl restart club3090-qwen36-docker.service
           exit 0
           ;;
       esac
 
-      active_usec="$(${pkgs.systemd}/bin/systemctl show qwen36-vllm.service --property=ActiveEnterTimestampMonotonic --value || echo 0)"
+      active_usec="$(${pkgs.systemd}/bin/systemctl show club3090-qwen36-docker.service --property=ActiveEnterTimestampMonotonic --value || echo 0)"
       read -r uptime _ < /proc/uptime
       uptime_sec="''${uptime%%.*}"
       active_sec="$((active_usec / 1000000))"
@@ -501,15 +501,15 @@
         exit 0
       fi
 
-      ${pkgs.systemd}/bin/systemctl restart qwen36-vllm.service
+      ${pkgs.systemd}/bin/systemctl restart club3090-qwen36-docker.service
     '';
   };
 
   systemd.timers.qwen36-vllm-watchdog = {
-    wantedBy = []; # manual-start with qwen36-vllm
+    wantedBy = ["timers.target"]; # self-heal the container-backed :8010 endpoint
     timerConfig = {
       OnBootSec = "10min";
-      OnUnitActiveSec = "10min";
+      OnUnitActiveSec = "2min";
       Unit = "qwen36-vllm-watchdog.service";
     };
   };
