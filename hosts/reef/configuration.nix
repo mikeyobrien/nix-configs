@@ -11,7 +11,7 @@
     ./hardware-configuration.nix
     ./k3s.nix
     ./microvm.nix
-    #./ups.nix
+    ./ups.nix
     # TODO: Unable to initialize capture methodAdd Cachix
   ];
 
@@ -294,7 +294,7 @@
       "docker.service"
       "nvidia-container-toolkit-cdi-generator.service"
     ];
-    wantedBy = ["multi-user.target"];
+    wantedBy = []; # manual-start; superseded by llama.cpp containers on :8010 (2026-07-25)
     conflicts = ["qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
     path = [pkgs.docker pkgs.bash pkgs.coreutils];
     environment = {
@@ -506,11 +506,67 @@
   };
 
   systemd.timers.qwen36-vllm-watchdog = {
-    wantedBy = ["timers.target"]; # self-heal the container-backed :8010 endpoint
+    wantedBy = []; # disabled: restarted the retired vLLM stack against the live llama.cpp :8010 container
     timerConfig = {
       OnBootSec = "10min";
       OnUnitActiveSec = "2min";
       Unit = "qwen36-vllm-watchdog.service";
+    };
+  };
+
+  # Replacement for qwen36-vllm-watchdog (2026-07-25).
+  #
+  # The old watchdog restarted club3090-qwen36-docker.service, which is now
+  # retired. The live endpoints are plain `docker run` containers started by
+  # hand, so this heals by container instead of by systemd unit, and is
+  # generic over whichever container currently publishes the port.
+  #
+  # Docker's own `--restart unless-stopped` already covers a crashed process.
+  # This covers the case that policy cannot see: container up, llama-server
+  # inside it wedged and no longer answering /health.
+  systemd.services.llm-endpoint-watchdog = {
+    description = "Restart the container publishing an LLM port if /health stops answering";
+    after = ["docker.service"];
+    serviceConfig.Type = "oneshot";
+    path = [pkgs.docker pkgs.curl pkgs.coreutils];
+    script = ''
+      set -uo pipefail
+
+      # Model load takes 40-90s; do not restart a container that is still coming up.
+      GRACE=180
+
+      for port in 8010 8011; do
+        cid="$(docker ps --filter "publish=$port" --format '{{.ID}}' | head -1)"
+        if [ -z "$cid" ]; then
+          # Nothing publishing this port - the restart policy owns that case.
+          continue
+        fi
+
+        started="$(docker inspect -f '{{.State.StartedAt}}' "$cid" 2>/dev/null || echo "")"
+        if [ -n "$started" ]; then
+          started_sec="$(date -d "$started" +%s 2>/dev/null || echo 0)"
+          now_sec="$(date +%s)"
+          if [ "$started_sec" -gt 0 ] && [ "$((now_sec - started_sec))" -lt "$GRACE" ]; then
+            continue
+          fi
+        fi
+
+        if curl --noproxy '*' -fsS --max-time 5 "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
+          continue
+        fi
+
+        echo "port $port unhealthy; restarting container $cid"
+        docker restart "$cid" || true
+      done
+    '';
+  };
+
+  systemd.timers.llm-endpoint-watchdog = {
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnBootSec = "10min";
+      OnUnitActiveSec = "2min";
+      Unit = "llm-endpoint-watchdog.service";
     };
   };
 
