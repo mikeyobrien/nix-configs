@@ -514,51 +514,27 @@
     };
   };
 
-  # Replacement for qwen36-vllm-watchdog (2026-07-25).
+  # Fail-closed vLLM watchdog (2026-07-27).
   #
-  # The old watchdog restarted club3090-qwen36-docker.service, which is now
-  # retired. The live endpoints are plain `docker run` containers started by
-  # hand, so this heals by container instead of by systemd unit, and is
-  # generic over whichever container currently publishes the port.
-  #
-  # Docker's own `--restart unless-stopped` already covers a crashed process.
-  # This covers the case that policy cannot see: container up, llama-server
-  # inside it wedged and no longer answering /health.
+  # A confirmed dead EngineCore previously triggered an automatic 18 GiB model
+  # reload, immediately before a whole-host lock. Keep the endpoint down instead:
+  # confirm failure, stop once, alert Telegram, and require manual recovery.
+  environment.etc."local/bin/llm-endpoint-watchdog-stop-alert.sh" = {
+    source = ./llm-endpoint-watchdog-stop-alert.sh;
+    mode = "0755";
+  };
+
   systemd.services.llm-endpoint-watchdog = {
-    description = "Restart the container publishing an LLM port if /health stops answering";
-    after = ["docker.service"];
-    serviceConfig.Type = "oneshot";
-    path = [pkgs.docker pkgs.curl pkgs.coreutils];
-    script = ''
-      set -uo pipefail
-
-      # Model load takes 40-90s; do not restart a container that is still coming up.
-      GRACE=180
-
-      for port in 8010 8011; do
-        cid="$(docker ps --filter "publish=$port" --format '{{.ID}}' | head -1)"
-        if [ -z "$cid" ]; then
-          # Nothing publishing this port - the restart policy owns that case.
-          continue
-        fi
-
-        started="$(docker inspect -f '{{.State.StartedAt}}' "$cid" 2>/dev/null || echo "")"
-        if [ -n "$started" ]; then
-          started_sec="$(date -d "$started" +%s 2>/dev/null || echo 0)"
-          now_sec="$(date +%s)"
-          if [ "$started_sec" -gt 0 ] && [ "$((now_sec - started_sec))" -lt "$GRACE" ]; then
-            continue
-          fi
-        fi
-
-        if curl --noproxy '*' -fsS --max-time 5 "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
-          continue
-        fi
-
-        echo "port $port unhealthy; restarting container $cid"
-        docker restart "$cid" || true
-      done
-    '';
+    description = "Stop and alert when Reef vLLM is confirmed unhealthy";
+    after = ["docker.service" "network-online.target"];
+    wants = ["network-online.target"];
+    path = [pkgs.bash pkgs.docker pkgs.curl pkgs.coreutils pkgs.gnused];
+    serviceConfig = {
+      Type = "oneshot";
+      StateDirectory = "llm-endpoint-watchdog";
+      StateDirectoryMode = "0700";
+      ExecStart = "/etc/local/bin/llm-endpoint-watchdog-stop-alert.sh";
+    };
   };
 
   systemd.timers.llm-endpoint-watchdog = {
