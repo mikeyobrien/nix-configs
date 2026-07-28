@@ -17,6 +17,7 @@
 
   modules.development.uv.enable = true;
   modules.development.uvx.enable = true;
+  modules.development.languages.enableNodejs = false;
   llm-tools.enable = true;
 
   home.sessionPath = ["$HOME/.npm-global/bin"];

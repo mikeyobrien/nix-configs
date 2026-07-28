@@ -56,7 +56,8 @@
     "vfio_iommu_type1"
   ];
   boot.extraModprobeConfig = ''
-    options vfio-pci ids=10de:2204
+    # Both RTX 3090s (10de:2204) are host vLLM devices. Do not bind them to
+    # vfio-pci; doing so races the NVIDIA driver during initrd activation.
     options kvm_intel nested=1
     options vfio_iommu_type1 allow_unsafe_interrupts=1
     options netconsole netconsole=6665@192.168.1.2/br0,6666@192.168.1.3/1c:1d:d3:d8:b5:a2
@@ -237,15 +238,6 @@
     enable = true;
     qemu = {
       package = pkgs.qemu_kvm;
-      ovmf = {
-        enable = true;
-        packages = [
-          (pkgs.OVMF.override {
-            secureBoot = true;
-            tpmSupport = true;
-          }).fd
-        ];
-      };
       swtpm.enable = true;
     };
   };
@@ -676,12 +668,12 @@
     mode = "0400";
   };
 
-  systemd.sleep.extraConfig = ''
-    AllowSuspend=no
-    AllowHibernation=no
-    AllowHybridSleep=no
-    AllowSuspendThenHibernate=no
-  '';
+  systemd.sleep.settings.Sleep = {
+    AllowSuspend = "no";
+    AllowHibernation = "no";
+    AllowHybridSleep = "no";
+    AllowSuspendThenHibernate = "no";
+  };
 
   # Local NVMe data drive for Immich photos/videos
   fileSystems."/mnt/data" = {

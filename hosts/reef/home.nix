@@ -34,6 +34,10 @@
     way-displays
   ];
 
+  # Reef explicitly uses Node 24 above; avoid also installing the generic
+  # Node package from the shared language-tools module.
+  modules.development.languages.enableNodejs = false;
+
   # Enable uvx
   modules.development.uvx.enable = true;
 
