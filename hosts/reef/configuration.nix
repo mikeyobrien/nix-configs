@@ -12,6 +12,7 @@
     ./k3s.nix
     ./microvm.nix
     ./ups.nix
+    ./hardening.nix
     ./media.nix
     # TODO: Unable to initialize capture methodAdd Cachix
   ];
