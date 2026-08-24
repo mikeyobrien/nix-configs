@@ -252,7 +252,7 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
-  # Set GPU power limits on boot (default 420W → 220W per card)
+  # Set GPU power limits on boot (default 420W → 160W per card; was 220W until 2026-08-25)
   # Lowered from 275W to 220W after two unexplained hard reboots during
   # vLLM TP=2 dual-3090 sustained load (no kernel logs, no Xid, no OOM —
   # signature of PSU sag / undervoltage trip). 220W matches the upstream
@@ -260,7 +260,7 @@
   systemd.services.nvidia-power-limit = let
     smi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
   in {
-    description = "Set NVIDIA GPU power limits (220W each)";
+    description = "Set NVIDIA GPU power limits (160W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
     before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
@@ -268,8 +268,8 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${smi} -i 0 -pl 220"
-        "${smi} -i 1 -pl 220"
+        "${smi} -i 0 -pl 160"
+        "${smi} -i 1 -pl 160"
       ];
     };
   };
