@@ -252,7 +252,7 @@
   systemd.services.nvidia-power-limit = let
     smi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
   in {
-    description = "Set NVIDIA GPU power limits (220W each)";
+    description = "Set NVIDIA GPU power limits (160W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
     before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
@@ -260,8 +260,8 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${smi} -i 0 -pl 220"
-        "${smi} -i 1 -pl 220"
+        "${smi} -i 0 -pl 160"
+        "${smi} -i 1 -pl 160"
       ];
     };
   };
