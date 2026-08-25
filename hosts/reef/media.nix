@@ -7,28 +7,22 @@
   #
   # Additive mounts only -- does not touch /mnt/data, /mnt/synology/*, or the
   # legacy Unraid NFS share at /mnt/media.
+  #
+  # Write access for the media services is granted at the filesystem layer
+  # (setgid + group/world-writable library dirs), NOT via per-service group
+  # options, which vary across modules and are not all supported (prowlarr).
   # ---------------------------------------------------------------------------
 
-  # 7.3 TB XFS disk 1 (former Unraid array disk; 2.4T media under /media)
   fileSystems."/mnt/array/sdc1" = {
     device = "/dev/disk/by-uuid/5e723a8f-757e-4de3-8555-2a050eede7f3";
     fsType = "xfs";
-    options = [
-      "nofail"
-      "noatime"
-      "x-systemd.device-timeout=10"
-    ];
+    options = [ "nofail" "noatime" "x-systemd.device-timeout=10" ];
   };
 
-  # 7.3 TB XFS disk 2 (former Unraid array disk; 461G media under /media)
   fileSystems."/mnt/array/sdd1" = {
     device = "/dev/disk/by-uuid/5ace78d6-8a06-40c7-845b-4d48cfbca82a";
     fsType = "xfs";
-    options = [
-      "nofail"
-      "noatime"
-      "x-systemd.device-timeout=10"
-    ];
+    options = [ "nofail" "noatime" "x-systemd.device-timeout=10" ];
   };
 
   # Intel VA-API media driver for iGPU transcode (UHD 770). The RTX 3090s stay
