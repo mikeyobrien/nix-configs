@@ -8,6 +8,18 @@
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Reef is pinned independently while the rest of the fleet remains on 25.05.
+    # These are the exact revisions exercised by the guarded 6.18.40 trial.
+    nixpkgs-reef.url = "github:NixOS/nixpkgs/2f5a153c270b70cb0f8c11f46d96d6d3bc39f4e3";
+    home-manager-reef = {
+      url = "github:nix-community/home-manager/d4fd24667c8cbef124bb70a20380cab75ec8474d";
+      inputs.nixpkgs.follows = "nixpkgs-reef";
+    };
+    microvm-reef = {
+      url = "github:astro/microvm.nix/39a499ab85311b56dddb09ec43351cc3658f22c1";
+      inputs.nixpkgs.follows = "nixpkgs-reef";
+    };
+
     darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -57,6 +69,16 @@
     mkSystem = import ./lib/mkSystem.nix {
       inherit nixpkgs inputs overlays outputs;
     };
+    reefInputs = inputs // {
+      nixpkgs = inputs.nixpkgs-reef;
+      home-manager = inputs.home-manager-reef;
+      microvm = inputs.microvm-reef;
+    };
+    mkReefSystem = import ./lib/mkSystem.nix {
+      nixpkgs = inputs.nixpkgs-reef;
+      inputs = reefInputs;
+      inherit overlays outputs;
+    };
     mkHome = import ./lib/mkHome.nix {
       inherit nixpkgs inputs outputs;
     };
@@ -95,7 +117,7 @@
         system = "x86_64-linux";
       };
 
-      reef = mkSystem "reef" {
+      reef = mkReefSystem "reef" {
         user = "mobrienv";
         system = "x86_64-linux";
       };

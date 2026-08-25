@@ -11,7 +11,7 @@ in {
   config = mkIf cfg.enable {
     home.packages = with pkgs; [
       # Create an FHS environment for UVX
-      (pkgs.buildFHSUserEnv {
+      (pkgs.buildFHSEnv {
         name = "uvx-env";
         targetPkgs = pkgs: with pkgs; [
           python3

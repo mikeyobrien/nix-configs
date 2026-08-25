@@ -50,11 +50,11 @@
 
           # Raise kernel-wide and per-process resource limits for dev workloads
           boot.kernel.sysctl."fs.file-max" = 2097152;
-          systemd.extraConfig = ''
-            DefaultLimitNOFILE=1048576
-            DefaultLimitNPROC=65536
-            DefaultTasksMax=65536
-          '';
+          systemd.settings.Manager = {
+            DefaultLimitNOFILE = 1048576;
+            DefaultLimitNPROC = 65536;
+            DefaultTasksMax = 65536;
+          };
           systemd.user.extraConfig = ''
             DefaultLimitNOFILE=1048576
             DefaultLimitNPROC=65536
