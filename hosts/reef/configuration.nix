@@ -742,12 +742,6 @@
     ];
   };
 
-  fileSystems."/mnt/media" = {
-    device = "192.168.1.8:/mnt/user/media";
-    fsType = "nfs";
-    options = ["defaults" "x-systemd.automount" "noatime"];
-  };
-
   programs.appimage = {
     enable = true;
     binfmt = true;

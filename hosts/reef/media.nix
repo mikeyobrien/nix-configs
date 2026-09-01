@@ -5,8 +5,8 @@
   # These disks were the Unraid VM array (now retired); library is preserved
   # in-place at /mnt/array/<disk>/media. No reformat/migration performed.
   #
-  # Additive mounts only -- does not touch /mnt/data, /mnt/synology/*, or the
-  # legacy Unraid NFS share at /mnt/media.
+  # Additive mounts only -- does not touch /mnt/data or /mnt/synology/*
+  # The legacy Unraid NFS share at /mnt/media was removed (unraid retired).
   #
   # Write access for the media services is granted at the filesystem layer
   # (setgid + group/world-writable library dirs), NOT via per-service group
