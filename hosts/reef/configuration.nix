@@ -689,7 +689,7 @@
   # Synology DS218+ NFS exports. These are automounts, not boot-critical
   # mounts: reef/k3s should boot cleanly even when the NAS is unavailable.
   fileSystems."/mnt/synology/backups" = {
-    device = "192.168.1.83:/volume1/reef-host-backups";
+    device = "192.168.1.82:/volume1/reef-host-backups";
     fsType = "nfs";
     options = [
       "noauto"
@@ -707,7 +707,7 @@
   };
 
   fileSystems."/mnt/synology/media" = {
-    device = "192.168.1.83:/volume1/media-archive";
+    device = "192.168.1.82:/volume1/media-archive";
     fsType = "nfs";
     options = [
       "noauto"
@@ -725,7 +725,7 @@
   };
 
   fileSystems."/mnt/synology/exports" = {
-    device = "192.168.1.83:/volume1/app-exports";
+    device = "192.168.1.82:/volume1/app-exports";
     fsType = "nfs";
     options = [
       "noauto"
