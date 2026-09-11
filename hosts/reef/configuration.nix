@@ -245,15 +245,32 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
-  # Set GPU power limits on boot (default 420W → 160W per card; was 220W until 2026-08-25)
-  # Lowered from 275W to 220W after two unexplained hard reboots during
-  # vLLM TP=2 dual-3090 sustained load (no kernel logs, no Xid, no OOM —
-  # signature of PSU sag / undervoltage trip). 220W matches the upstream
-  # qwen36-vllm-setup repo's recommended GPU_POWER_LIMIT for stacked 3090s.
+  # Set GPU power limits on boot (default 420W → 250W per card).
+  #
+  # HISTORY — do not delete, this is why the cap exists:
+  # The card default is 420W. Lowered from 275W to 220W after TWO UNEXPLAINED
+  # HARD REBOOTS during vLLM TP=2 dual-3090 sustained load (no kernel logs, no
+  # Xid, no OOM — signature of PSU sag / undervoltage trip). 220W matches the
+  # upstream qwen36-vllm-setup repo's recommended GPU_POWER_LIMIT for stacked
+  # 3090s. Then 220W → 160W on 2026-08-25.
+  #
+  # 2026-09-10: raised 160W → 250W deliberately, with the risk understood.
+  # Benchmarked (see reef-power-limit-report.md, scripts /tmp/reef_bench.py and
+  # /tmp/reef_prefill.py): decode 88.6 → 118.0 tok/s (+33%) and prefill
+  # 975 → 1148 tok/s (+18%). Decode SATURATES at 250W, so 350W adds nothing and
+  # is strictly worse (more heat/noise, 83C vs 69C). 250W is only 25W below the
+  # 275W that hard-rebooted this box, so the PSU-sag risk is NOT retired: if
+  # unexplained reboots return, revert this line first.
+  #
+  # Note: the monitored UPS (cyberpower@localhost) reports ups.load and
+  # ActivePower as 0 even under full dual-GPU load, so an alarm bound to *that*
+  # device cannot fire. If reef is fed by a different UPS this is expected; if
+  # this device is in reef's power path, verify it before relying on it as a
+  # safety net for the cap above.
   systemd.services.nvidia-power-limit = let
     smi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
   in {
-    description = "Set NVIDIA GPU power limits (160W each)";
+    description = "Set NVIDIA GPU power limits (250W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
     before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
@@ -261,8 +278,8 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${smi} -i 0 -pl 160"
-        "${smi} -i 1 -pl 160"
+        "${smi} -i 0 -pl 250"
+        "${smi} -i 1 -pl 250"
       ];
     };
   };
