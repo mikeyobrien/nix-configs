@@ -9,7 +9,7 @@
 }: {
   microvm.vms = {
     tidepool = {
-      autostart = true;
+      autostart = false;
       config = let
         inherit inputs outputs user;
       in
@@ -163,7 +163,7 @@
     };
 
     dad-openclaw = {
-      autostart = true;
+      autostart = false;
       config = {
         pkgs,
         lib,
@@ -277,7 +277,7 @@
     };
 
     maria-hermes = {
-      autostart = true;
+      autostart = false;
       config = {
         pkgs,
         lib,
@@ -428,7 +428,7 @@
     };
 
     bredren = {
-      autostart = true;
+      autostart = false;
       config = {pkgs, ...}: {
         system.stateVersion = "25.05";
         networking.hostName = "bredren";

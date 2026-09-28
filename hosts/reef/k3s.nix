@@ -15,6 +15,10 @@
       "--write-kubeconfig-mode=660"
       "--write-kubeconfig-group=users"
       "--kubelet-arg=max-pods=200"
+      # Start image collection before root reaches the pressure thresholds;
+      # continue until enough headroom exists for PV and VM bursts.
+      "--kubelet-arg=image-gc-high-threshold=80"
+      "--kubelet-arg=image-gc-low-threshold=70"
     ];
   };
 

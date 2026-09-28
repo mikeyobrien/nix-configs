@@ -9,6 +9,7 @@
   imports = [
     ../default.nix
     ./hardware-configuration.nix
+    ./igpu-sriov.nix
     ./k3s.nix
     ./microvm.nix
     ./ups.nix
@@ -37,6 +38,61 @@
 
   # Increase nix-daemon file descriptor limit for large builds (microVM chroot sandboxing)
   systemd.services.nix-daemon.serviceConfig.LimitNOFILE = 1048576;
+
+  systemd.services.cloudflare-ddns = let
+    ddnsScript = pkgs.writeShellScript "cloudflare-ddns" ''
+      set -euo pipefail
+      TOKEN_FILE=/etc/ddns-cloudflare.token
+      ZONE_NAME=mobrienv.dev
+      RECORD_NAME=lab.mobrienv.dev
+      API=https://api.cloudflare.com/client/v4
+      JQ=${pkgs.jq}/bin/jq
+      CURL=${pkgs.curl}/bin/curl
+      TS=$(date -Is)
+
+      [ -s "$TOKEN_FILE" ] || { echo "$TS no token file yet - skipping"; exit 0; }
+      TOKEN=$(cat "$TOKEN_FILE")
+
+      WAN=$("$CURL" -fsS --max-time 10 https://api.ipify.org || true)
+      if [ -z "$WAN" ]; then
+        WAN=$("$CURL" -fsS --max-time 10 https://www.cloudflare.com/cdn-cgi/trace | "$JQ" -rR 'select(startswith("ip=")) | .[3:]')
+      fi
+      [ -n "$WAN" ] || { echo "$TS failed to determine WAN IP"; exit 1; }
+
+      ZONE_ID=$("$CURL" -fsS --max-time 10 -H "Authorization: Bearer $TOKEN" "$API/zones?name=$ZONE_NAME" | "$JQ" -r '.result[0].id // empty')
+      [ -n "$ZONE_ID" ] || { echo "$TS cannot resolve zone id - check token permissions"; exit 1; }
+
+      REC=$("$CURL" -fsS --max-time 10 -H "Authorization: Bearer $TOKEN" "$API/zones/$ZONE_ID/dns_records?type=A&name=$RECORD_NAME")
+      REC_ID=$("$JQ" -r '.result[0].id // empty' <<<"$REC")
+      CUR=$("$JQ" -r '.result[0].content // empty' <<<"$REC")
+
+      if [ "$CUR" = "$WAN" ]; then
+        echo "$TS $RECORD_NAME already at $WAN"
+        exit 0
+      fi
+
+      if [ -z "$REC_ID" ]; then
+        "$CURL" -fsS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+          --data '{"type":"A","name":"'"$RECORD_NAME"'","content":"'"$WAN"'","ttl":300,"proxied":false}' \
+          "$API/zones/$ZONE_ID/dns_records" >/dev/null
+        echo "$TS created $RECORD_NAME -> $WAN"
+      else
+        "$CURL" -fsS -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+          --data '{"content":"'"$WAN"'","ttl":300}' \
+          "$API/zones/$ZONE_ID/dns_records/$REC_ID" >/dev/null
+        echo "$TS updated $RECORD_NAME: ''${CUR:-none} -> $WAN"
+      fi
+    '';
+  in {
+    description = "Cloudflare DDNS updater (lab.mobrienv.dev)";
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = ddnsScript;
+    };
+    startAt = "*:0/5";
+  };
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.systemd-boot.configurationLimit = 3;
@@ -115,17 +171,42 @@
   networking.hostName = "reef"; # Define your hostname.
   networking.useNetworkd = true;
   systemd.network.enable = true;
-  systemd.network.networks."10-lan" = {
-    matchConfig.Name = ["enp5s0" "vm-*"];
-    networkConfig = {
-      Bridge = "br0";
-    };
+
+  # Native LAN remains untagged on VLAN 1. The DMP-facing port carries only
+  # the two bot VLANs as tags; existing vm-* taps remain native-only.
+  systemd.network.networks."10-lan-uplink" = {
+    matchConfig.Name = "enp5s0";
+    networkConfig.Bridge = "br0";
+    bridgeVLANs = [
+      {
+        VLAN = "1";
+        PVID = 1;
+        EgressUntagged = 1;
+      }
+      { VLAN = "30-31"; }
+    ];
+  };
+
+  systemd.network.networks."10-lan-guests" = {
+    matchConfig.Name = "vm-*";
+    networkConfig.Bridge = "br0";
+    bridgeVLANs = [
+      {
+        VLAN = "1";
+        PVID = 1;
+        EgressUntagged = 1;
+      }
+    ];
   };
 
   systemd.network.netdevs."br0" = {
     netdevConfig = {
       Name = "br0";
       Kind = "bridge";
+    };
+    bridgeConfig = {
+      VLANFiltering = true;
+      DefaultPVID = 1;
     };
   };
 
@@ -136,6 +217,13 @@
       Gateway = "192.168.1.1";
       DNS = ["192.168.1.1"];
     };
+    bridgeVLANs = [
+      {
+        VLAN = "1";
+        PVID = 1;
+        EgressUntagged = 1;
+      }
+    ];
     linkConfig.RequiredForOnline = "routable";
   };
 
@@ -160,16 +248,9 @@
     ]);
 
   programs.dconf.enable = true;
-  networking = {
-    bridges = {
-      br0 = {
-        interfaces = ["enp5s0"];
-      };
-    };
-    interfaces = {
-      br0.useDHCP = false;
-      enp5s0.useDHCP = false;
-    };
+  networking.interfaces = {
+    br0.useDHCP = false;
+    enp5s0.useDHCP = false;
   };
 
   time.timeZone = "America/Chicago";
@@ -231,6 +312,31 @@
     ];
   };
   networking.firewall.enable = false;
+
+  # bridge-nf sends isolated VM frames through host iptables before they leave
+  # br0. Without these narrow NOTRACK rules, k3s hostPort DNAT steals the first
+  # pass to :8010 and the VLAN gateway never creates return-path state.
+  systemd.services.local-llm-vm-bridge-bypass = {
+    description = "Bypass k3s hostPort interception for isolated Hermes VMs";
+    wantedBy = ["multi-user.target"];
+    after = ["network-online.target" "k3s.service"];
+    wants = ["network-online.target"];
+    path = [pkgs.iptables];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      iptables -t raw -C PREROUTING -i br0 -m mac --mac-source 52:54:00:48:45:52 -s 192.168.30.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-heretic -j CT --notrack 2>/dev/null || \
+        iptables -t raw -I PREROUTING 1 -i br0 -m mac --mac-source 52:54:00:48:45:52 -s 192.168.30.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-heretic -j CT --notrack
+      iptables -t raw -C PREROUTING -i br0 -m mac --mac-source 52:54:00:4f:42:49 -s 192.168.31.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-obrien -j CT --notrack 2>/dev/null || \
+        iptables -t raw -I PREROUTING 1 -i br0 -m mac --mac-source 52:54:00:4f:42:49 -s 192.168.31.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-obrien -j CT --notrack
+    '';
+    preStop = ''
+      iptables -t raw -D PREROUTING -i br0 -m mac --mac-source 52:54:00:48:45:52 -s 192.168.30.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-heretic -j CT --notrack 2>/dev/null || true
+      iptables -t raw -D PREROUTING -i br0 -m mac --mac-source 52:54:00:4f:42:49 -s 192.168.31.0/24 -d 192.168.1.2/32 -p tcp --dport 8010 -m comment --comment local-llm-vm-bridge-bypass-obrien -j CT --notrack 2>/dev/null || true
+    '';
+  };
 
   security.sudo.wheelNeedsPassword = false;
   programs.virt-manager.enable = true;
@@ -324,6 +430,41 @@
       RestartSec = 15;
       TimeoutStartSec = 120;
       TimeoutStopSec = 60;
+    };
+  };
+
+  # HyperQwen (syv-ai/HyperQwen, vLLM 0.30): qwen3.8-27b uncensored on GPU0, :9090
+  # (:8010 via the reef-8010-to-9090 socat container). Profile B: SPEC=mtp, 64k ctx,
+  # VISION=1. Replaced the club-3090 vllm-qwen38-27b-orca-uncensored container 2026-09-28.
+  # The container keeps restart=unless-stopped for crash recovery; this unit only
+  # guarantees it comes back after boot, because Docker restart policies can race the
+  # CDI generator ("could not select device driver cdi"). No ExecStop and
+  # restartIfChanged=false, so a nixos-rebuild switch never bounces the LLM.
+  systemd.services.hyperqwen-single = {
+    description = "HyperQwen qwen3.8-27b single-user stack (GPU0, :9090)";
+    after = [
+      "network-online.target"
+      "docker.service"
+      "nvidia-container-toolkit-cdi-generator.service"
+      "nvidia-power-limit.service"
+    ];
+    wants = ["network-online.target"];
+    requires = [
+      "docker.service"
+      "nvidia-container-toolkit-cdi-generator.service"
+    ];
+    wantedBy = ["multi-user.target"];
+    restartIfChanged = false;
+    path = [pkgs.docker];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      WorkingDirectory = "/home/mobrienv/HyperQwen";
+      # --no-deps: the upstream "prepare" service downloads the base model; ours is pre-prepared.
+      ExecStart = "${pkgs.docker}/bin/docker compose --profile single up -d --no-deps single";
+      Restart = "on-failure";
+      RestartSec = 15;
+      TimeoutStartSec = 180;
     };
   };
 
@@ -525,38 +666,6 @@
     };
   };
 
-  # Fail-closed vLLM watchdog (2026-07-27).
-  #
-  # A confirmed dead EngineCore previously triggered an automatic 18 GiB model
-  # reload, immediately before a whole-host lock. Keep the endpoint down instead:
-  # confirm failure, stop once, alert Telegram, and require manual recovery.
-  environment.etc."local/bin/llm-endpoint-watchdog-stop-alert.sh" = {
-    source = ./llm-endpoint-watchdog-stop-alert.sh;
-    mode = "0755";
-  };
-
-  systemd.services.llm-endpoint-watchdog = {
-    description = "Stop and alert when Reef vLLM is confirmed unhealthy";
-    after = ["docker.service" "network-online.target"];
-    wants = ["network-online.target"];
-    path = [pkgs.bash pkgs.docker pkgs.curl pkgs.coreutils pkgs.gnused];
-    serviceConfig = {
-      Type = "oneshot";
-      StateDirectory = "llm-endpoint-watchdog";
-      StateDirectoryMode = "0700";
-      ExecStart = "/etc/local/bin/llm-endpoint-watchdog-stop-alert.sh";
-    };
-  };
-
-  systemd.timers.llm-endpoint-watchdog = {
-    wantedBy = ["timers.target"];
-    timerConfig = {
-      OnBootSec = "10min";
-      OnUnitActiveSec = "2min";
-      Unit = "llm-endpoint-watchdog.service";
-    };
-  };
-
   # Hermes Agent - local AI agent with hardened systemd service
   services.hermes-agent = {
     enable = false; # decommission runtime on reef; keep Hermes files/config around
@@ -699,6 +808,22 @@
     device = "/dev/disk/by-uuid/101cbd70-c8a7-41b0-985f-8fc8e3d55486";
     fsType = "ext4";
   };
+
+  # Keep Immich's static local PV path stable while storing its growing
+  # library on the dedicated data NVMe. Fail closed if /mnt/data is absent so
+  # k3s cannot silently write the library back onto the root filesystem.
+  fileSystems."/var/lib/rancher/k3s/storage/pvc-fd07e725-1487-4339-8d4c-5a3f4903869b_immich_immich-library-pvc" = {
+    device = "/mnt/data/immich-library";
+    fsType = "none";
+    options = [
+      "bind"
+      "x-systemd.requires-mounts-for=/mnt/data"
+    ];
+  };
+
+  systemd.services.k3s.unitConfig.RequiresMountsFor = [
+    "/var/lib/rancher/k3s/storage/pvc-fd07e725-1487-4339-8d4c-5a3f4903869b_immich_immich-library-pvc"
+  ];
 
   # NFS client configuration
   services.rpcbind.enable = true; # Required for NFS

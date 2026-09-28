@@ -18,8 +18,6 @@ in {
   };
   
   config = mkIf cfg.enable {
-    home.packages = [
-      (pkgs.nerdfonts.override { fonts = cfg.fonts; })
-    ];
+    home.packages = map pkgs.nerd-fonts.getFont cfg.fonts;
   };
 }
