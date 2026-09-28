@@ -118,7 +118,6 @@
     # vfio-pci; doing so races the NVIDIA driver during initrd activation.
     options kvm_intel nested=1
     options vfio_iommu_type1 allow_unsafe_interrupts=1
-    options netconsole netconsole=6665@192.168.1.2/br0,6666@192.168.1.3/1c:1d:d3:d8:b5:a2
   '';
 
   # Crash forensics (added 2026-07-06 after silent hard freezes under
@@ -131,6 +130,35 @@
   systemd.watchdog = {
     runtimeTime = "60s";
     rebootTime = "120s";
+  };
+
+  # netconsole target, created after br0 exists. The old modprobe option
+  # (netconsole=...@.../br0) never worked once the LAN moved to the br0 bridge:
+  # the module loads before br0, logs "netpoll: br0 doesn't exist, aborting" and
+  # sends nothing. The listener on rook is the launchd agent
+  # dev.mobrienv.reef-netconsole, which writes ~/Library/Logs/reef-netconsole.log.
+  systemd.services.netconsole-target = {
+    description = "netconsole target on br0 -> rook 192.168.1.3:6666";
+    after = ["sys-subsystem-net-devices-br0.device" "network-online.target"];
+    requires = ["sys-subsystem-net-devices-br0.device"];
+    wants = ["network-online.target"];
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      t=/sys/kernel/config/netconsole/rook
+      if [ "$(cat $t/enabled 2>/dev/null)" = 1 ]; then exit 0; fi
+      mkdir -p $t
+      echo br0 > $t/dev_name
+      echo 6665 > $t/local_port
+      echo 192.168.1.2 > $t/local_ip
+      echo 6666 > $t/remote_port
+      echo 192.168.1.3 > $t/remote_ip
+      echo 1c:1d:d3:d8:b5:a2 > $t/remote_mac
+      echo 1 > $t/enabled
+    '';
   };
 
   # Enable Graphics
@@ -351,7 +379,7 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
-  # Set GPU power limits on boot (default 420W → 250W per card).
+  # Set GPU power limits on boot (default 420W → 175W per card).
   #
   # HISTORY — do not delete, this is why the cap exists:
   # The card default is 420W. Lowered from 275W to 220W after TWO UNEXPLAINED
@@ -368,6 +396,16 @@
   # 275W that hard-rebooted this box, so the PSU-sag risk is NOT retired: if
   # unexplained reboots return, revert this line first.
   #
+  # 2026-09-28: back to 175W. reef hard-reset three times in one day: 03:57
+  # (idle, at 175W), 17:02 (after ~20 min of both cards pinned at 250W) and
+  # 17:08 (GPU0 ~150W, GPU1 idle). None left anything in the journal: no panic,
+  # no MCE, no Xid, and the hardware watchdog is ruled out on timing. That points
+  # at power delivery (PSU, cabling, board) rather than the cap itself. 175W
+  # matches what ~/.config/systemd/user/cw-power-watch.service applies a minute
+  # after boot. The UPS does not see reef's load (~160W reported while the GPUs
+  # alone drew ~500W). netconsole now actually works (see netconsole-target), so
+  # the next reset should leave kernel output on rook.
+  #
   # Note: the monitored UPS (cyberpower@localhost) reports ups.load and
   # ActivePower as 0 even under full dual-GPU load, so an alarm bound to *that*
   # device cannot fire. If reef is fed by a different UPS this is expected; if
@@ -376,7 +414,7 @@
   systemd.services.nvidia-power-limit = let
     smi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
   in {
-    description = "Set NVIDIA GPU power limits (250W each)";
+    description = "Set NVIDIA GPU power limits (175W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
     before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
@@ -384,8 +422,8 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${smi} -i 0 -pl 250"
-        "${smi} -i 1 -pl 250"
+        "${smi} -i 0 -pl 175"
+        "${smi} -i 1 -pl 175"
       ];
     };
   };
