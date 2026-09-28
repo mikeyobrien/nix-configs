@@ -379,7 +379,7 @@
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
-  # Set GPU power limits on boot (default 420W → 175W per card).
+  # Set GPU power limits on boot (default 420W → 250W per card).
   #
   # HISTORY — do not delete, this is why the cap exists:
   # The card default is 420W. Lowered from 275W to 220W after TWO UNEXPLAINED
@@ -406,6 +406,10 @@
   # alone drew ~500W). netconsole now actually works (see netconsole-target), so
   # the next reset should leave kernel output on rook.
   #
+  # 2026-09-28 (later): faulty RAM found and pulled (94 GB -> 62 GB), which fits
+  # instant resets with no trace, even at idle. Back to 250W. cw.sh no longer
+  # sets power limits; this unit is the only place they are set.
+  #
   # Note: the monitored UPS (cyberpower@localhost) reports ups.load and
   # ActivePower as 0 even under full dual-GPU load, so an alarm bound to *that*
   # device cannot fire. If reef is fed by a different UPS this is expected; if
@@ -414,7 +418,7 @@
   systemd.services.nvidia-power-limit = let
     smi = "${config.hardware.nvidia.package.bin}/bin/nvidia-smi";
   in {
-    description = "Set NVIDIA GPU power limits (175W each)";
+    description = "Set NVIDIA GPU power limits (250W each)";
     after = ["nvidia-persistenced.service"];
     wantedBy = ["multi-user.target"];
     before = ["club3090-qwen36-docker.service" "qwen36-vllm.service" "llama-server.service" "dflash-server.service" "ornith-server.service"];
@@ -422,8 +426,8 @@
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = [
-        "${smi} -i 0 -pl 175"
-        "${smi} -i 1 -pl 175"
+        "${smi} -i 0 -pl 250"
+        "${smi} -i 1 -pl 250"
       ];
     };
   };
