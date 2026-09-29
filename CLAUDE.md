@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 - Modular Nix configuration repository covering NixOS, macOS (nix-darwin), WSL, Nix-on-Droid, and microVM environments.
-- Hosts currently managed: moss, wsl, rhizome, driftwood, reef, rainforest, studio, coral, g14, droid.
+- Hosts currently managed: moss, wsl, rhizome, driftwood, reef, rainforest, coral, g14, droid.
 - Home Manager delivers user profiles; agenix handles secrets; `just` scripts wrap frequent workflows.
 
 ## Key Commands
@@ -98,7 +98,7 @@ Module categories include:
 - **Standard NixOS**: moss, rhizome, reef, driftwood.
 - **Servers / MicroVM**: reef hosts virtualization helpers, dev microVM profile under `microvms/`.
 - **WSL**: Tailored Home Manager tweaks for Windows Subsystem.
-- **Darwin**: rainforest, studio use nix-darwin with Home Manager.
+- **Darwin**: rainforest uses nix-darwin with Home Manager. The Mac `rook` (formerly `studio`) is NOT managed here; its nix-darwin config is the separate `agentbox` repo (Forgejo `mobrienv/agentbox`).
 - **Android**: Nix-on-Droid configuration under `hosts/droid/`.
 
 ## Composition Guidelines

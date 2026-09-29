@@ -11,7 +11,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Test configuration
 TEST_NAME="Lima VM Provisioning Tests"
 VM_NAME="test-orchard"
-LIMA_CONFIG="$ROOT_DIR/hosts/studio/lima-orchard.yaml"
+LIMA_CONFIG="$ROOT_DIR/hosts/orchard/lima-orchard.yaml"
 PROVISION_SCRIPT="$ROOT_DIR/scripts/provision-orchard-vm.sh"
 
 # Colors for output

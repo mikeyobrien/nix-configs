@@ -166,12 +166,6 @@
         system = "aarch64-darwin";
         isDarwin = true;
       };
-
-      studio = mkSystem "studio" {
-        user = "mobrienv";
-        system = "aarch64-darwin";
-        isDarwin = true;
-      };
     };
 
     nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {

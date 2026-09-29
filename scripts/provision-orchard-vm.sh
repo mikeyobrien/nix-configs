@@ -7,7 +7,7 @@ set -euo pipefail
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-LIMA_CONFIG="$ROOT_DIR/hosts/studio/lima-orchard.yaml"
+LIMA_CONFIG="$ROOT_DIR/hosts/orchard/lima-orchard.yaml"
 VM_NAME="orchard"
 DEFAULT_NIXOS_VERSION="24.05"
 
