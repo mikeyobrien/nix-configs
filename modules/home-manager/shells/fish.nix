@@ -37,8 +37,8 @@ in {
   };
   
   config = mkIf cfg.enable {
-    # Enable SSH agent with fish shell integration
-    services.ssh-agent.enable = true;
+    # Enable SSH agent with fish shell integration (Linux only; macOS runs its own via launchd)
+    services.ssh-agent.enable = pkgs.stdenv.isLinux;
 
     programs.fish = {
       enable = true;
