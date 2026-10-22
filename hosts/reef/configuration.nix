@@ -255,6 +255,26 @@
     linkConfig.RequiredForOnline = "routable";
   };
 
+  # Pods resolve through CoreDNS, which forwards to the LAN router
+  # 192.168.1.1. br0 (static 192.168.1.2) and wlp6s0 (DHCP) share
+  # 192.168.1.0/24 and the br0 connected route wins, but the router does not
+  # answer reef on br0. Pin the router to wlp6s0, which NetworkManager manages
+  # (networkd leaves it unmanaged), whenever the link comes up or its lease
+  # changes. No src: the kernel uses wlp6s0's current DHCP address.
+  networking.networkmanager.dispatcherScripts = [
+    {
+      type = "basic";
+      source = pkgs.writeShellScript "reef-router-via-wlp6s0" ''
+        [ "$1" = wlp6s0 ] || exit 0
+        case "$2" in
+          up|dhcp4-change|reapply)
+            ${pkgs.iproute2}/bin/ip route replace 192.168.1.1/32 dev wlp6s0
+            ;;
+        esac
+      '';
+    }
+  ];
+
   environment.gnome.excludePackages =
     (with pkgs; [
       gnome-photos
@@ -935,4 +955,10 @@
   programs.nix-ld.enable = true;
 
   system.stateVersion = "24.11";
+  # zram swap (2026-10-13), swap partition kept as fallback
+  zramSwap = {
+    enable = true;
+    memoryPercent = 25;
+    algorithm = "zstd";
+  };
 }
