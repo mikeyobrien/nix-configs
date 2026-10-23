@@ -36,10 +36,6 @@
     };
 
     agenix.url = "github:ryantm/agenix";
-    nix-on-droid = {
-      url = "github:nix-community/nix-on-droid/release-23.11";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     anyrun.url = "github:anyrun-org/anyrun";
     anyrun.inputs.nixpkgs.follows = "nixpkgs";
@@ -59,7 +55,6 @@
   outputs = {
     self,
     nixpkgs,
-    nix-on-droid,
     home-manager,
     ...
   } @ inputs: let
@@ -166,15 +161,6 @@
         system = "aarch64-darwin";
         isDarwin = true;
       };
-    };
-
-    nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
-      modules = [
-        (import ./hosts/droid/configuration.nix {
-          user = "mobrienv";
-          inputs = inputs;
-        })
-      ];
     };
 
     homeConfigurations = {

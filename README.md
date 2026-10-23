@@ -1,6 +1,6 @@
 # Nix Configurations
 
-A modular NixOS and Home Manager configuration repository supporting multiple systems including NixOS, Darwin (macOS), WSL, and Nix-on-Droid.
+A modular NixOS and Home Manager configuration repository supporting multiple systems including NixOS, Darwin (macOS), and WSL.
 
 ## 📁 Repository Structure
 
@@ -14,10 +14,8 @@ A modular NixOS and Home Manager configuration repository supporting multiple sy
 │   ├── rainforest/          # macOS (Darwin) system
 │   ├── reef/                # NixOS system
 │   ├── rhizome/             # NixOS system
-│   ├── wsl/                 # Windows Subsystem for Linux
-│   └── droid/               # Android (Nix-on-Droid)
+│   └── wsl/                 # Windows Subsystem for Linux
 ├── home-manager/
-│   └── emacs-android/       # Native Android Emacs dotfiles and installer
 ├── modules/                  # Reusable modules
 │   ├── home-manager/        # Home Manager modules
 │   │   ├── core/           # Essential packages and utilities
