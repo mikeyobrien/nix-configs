@@ -76,13 +76,11 @@ in
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
   
-
   ## Weird issue where i686 was trying to be built: https://github.com/NixOS/nixpkgs/issues/241539
   #hardware.opengl.extraPackages32 = pkgs.lib.mkForce [ pkgs.linuxPackages_latest.nvidia_x11.lib32 ];
-  hardware.opengl = {
+  hardware.graphics = {
     enable = true;
-    driSupport = true;
-    driSupport32Bit = true;
+    enable32Bit = true;
     extraPackages = with pkgs; [
       intel-media-driver
       intel-compute-runtime
@@ -100,9 +98,8 @@ in
     package = config.boot.kernelPackages.nvidiaPackages.production;
   };
 
-  # Enable sound.
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
+  hardware.alsa.enable = true;
+  services.pulseaudio.enable = pkgs.lib.mkForce true;
 
   services.avahi = {
     enable = true;
@@ -130,6 +127,7 @@ in
   };
 
   security.sudo.wheelNeedsPassword = false;
+  services.openssh.enable = true;
 
   services = {
     syncthing = {
@@ -156,7 +154,6 @@ in
     pipx
     gcc
     clang
-
     cudatoolkit
   ];
 
@@ -168,9 +165,6 @@ in
     enableSSHSupport = true;
   };
 
-  services.openssh.enable = true;
-
-  networking.firewall.enable = false;
   services.qemuGuest.enable = true;
   services.ttyd = {
     enable = true;
@@ -183,7 +177,7 @@ in
     extraConfig = { 
       outputs.influxdb_v2 = {
         urls = ["http://influxdb.home.arpa"];
-        token = "$INFLUXDB_TOKEN"; 
+        tokenFile = config.age.secrets.influxdb_token.path;
         organization = "default";
         bucket = "${config.networking.hostName}";
       };
@@ -224,7 +218,7 @@ in
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
   };
 
- fileSystems."/mnt/appdata" = {
+  fileSystems."/mnt/appdata" = {
     device = "unraid.local:/mnt/user/appdata";
     fsType = "nfs";
     options = ["x-systemd.automount" "noauto" "hard" "intr" "rw"];
@@ -235,7 +229,6 @@ in
     fsType = "ext4";
     options = [ "defaults" "noatime" ];
   };
-  services.fstrim.enable = true;
 
   system.stateVersion = "24.05"; # Did you read the comment?
 }

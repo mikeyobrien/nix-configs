@@ -23,7 +23,8 @@
   };
 
   fonts.packages = with pkgs; [
-    (pkgs.nerdfonts.override { fonts = [ "FiraCode" "NerdFontsSymbolsOnly" ]; })
+    pkgs.nerd-fonts.fira-code
+    pkgs.nerd-fonts.symbols-only
   ];
 
   system.stateVersion = "23.05";
