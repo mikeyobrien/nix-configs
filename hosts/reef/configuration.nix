@@ -461,6 +461,7 @@
   # leaving the container exited with "could not select device driver cdi".
   # Start it after CDI and Docker are ready so reef comes back serving.
   systemd.services.club3090-qwen36-docker = {
+    enable = false; # Retired 2026-10-23: Qwen 3.6 weights removed; use HyperQwen 3.8.
     description = "club-3090 Qwen3.6-35B-A3B AutoRound Docker vLLM stack (:8010)";
     after = [
       "network-online.target"
@@ -532,6 +533,7 @@
 
   # llama.cpp: Qwen3.6-35B-A3B UD-Q8_K_XL on dual 3090, 262K q8 KV (:8001)
   systemd.services.llama-server = {
+    enable = false; # Retired 2026-10-23: Qwen 3.6 weights removed.
     description = "llama.cpp Qwen3.6-35B-A3B Q8_K_XL (dual 3090, 262K :8001)";
     after = ["network.target"];
     conflicts = ["qwen36-vllm.service" "dflash-server.service"];
@@ -583,6 +585,7 @@
   # Runtime model/precision/context knobs live in /home/mobrienv/qwen36-vllm-setup.
   # GC roots for the pinned paths live in /nix/var/nix/gcroots/per-user/mobrienv/.
   systemd.services.dflash-server = {
+    enable = false; # Retired 2026-10-23: Qwen 3.6 weights removed.
     description = "vLLM Qwen3.6-27B FP8 full-context (dual 3090, 262144 ctx, :8000)";
     after = ["network.target" "nvidia-power-limit.service"];
     conflicts = ["qwen36-vllm.service" "llama-server.service"];
@@ -658,6 +661,7 @@
         --port 8010
     '';
   in {
+    enable = false; # Retired 2026-10-23: Qwen 3.6 weights removed.
     description = "vLLM cyankiwi Qwen3.6-27B AWQ/BF16/INT4 (dual 3090, 262K :8010)";
     after = ["network-online.target" "nvidia-power-limit.service"];
     wants = ["network-online.target"];
@@ -684,6 +688,7 @@
   };
 
   systemd.services.qwen36-vllm-watchdog = {
+    enable = false; # Retired with the Qwen 3.6 serving stack.
     description = "Restart the club-3090 vLLM container if the OpenAI endpoint stops answering";
     after = ["club3090-qwen36-docker.service"];
     serviceConfig.Type = "oneshot";
@@ -720,6 +725,7 @@
   };
 
   systemd.timers.qwen36-vllm-watchdog = {
+    enable = false; # Retired with the Qwen 3.6 serving stack.
     wantedBy = []; # disabled: restarted the retired vLLM stack against the live llama.cpp :8010 container
     timerConfig = {
       OnBootSec = "10min";

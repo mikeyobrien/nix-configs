@@ -20,9 +20,36 @@
   };
 
   fileSystems."/mnt/array/sdd1" = {
-    device = "/dev/disk/by-uuid/5ace78d6-8a06-40c7-845b-4d48cfbca82a";
+    device = "/dev/disk/by-uuid/5ace78d6-8a06-40c7-845b-4d48cfb82ca9";
     fsType = "xfs";
     options = [ "nofail" "noatime" "x-systemd.device-timeout=10" ];
+  };
+
+  # Existing standalone SSD filesystems, preserved in-place (2026-10-23).
+  # Mount the top-level subvolume explicitly; do not pool or reformat them.
+  fileSystems."/mnt/storage/ssd-2tb" = {
+    device = "/dev/disk/by-uuid/1da513ea-88ad-43d8-bbd4-8608ca7baf68";
+    fsType = "btrfs";
+    options = [ "nofail" "noatime" "subvolid=5" "x-systemd.device-timeout=10" ];
+  };
+
+  fileSystems."/mnt/storage/ssd-1tb" = {
+    device = "/dev/disk/by-uuid/67fd254f-6381-4369-850e-bae7f3c8de4a";
+    fsType = "btrfs";
+    options = [ "nofail" "noatime" "subvolid=5" "x-systemd.device-timeout=10" ];
+  };
+
+  # Keep legacy model paths stable after moving weights to the SATA SSD.
+  # Explicit dependency prevents binding an empty directory on the root disk.
+  fileSystems."/home/mobrienv/club-3090/models-cache" = {
+    device = "/mnt/storage/ssd-2tb/reef/models/club-3090-cache";
+    fsType = "none";
+    options = [
+      "bind"
+      "nofail"
+      "x-systemd.requires-mounts-for=/mnt/storage/ssd-2tb"
+      "x-systemd.before=docker.service"
+    ];
   };
 
   # Intel VA-API media driver for iGPU transcode (UHD 770). The RTX 3090s stay
