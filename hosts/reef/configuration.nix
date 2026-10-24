@@ -277,7 +277,7 @@
         parked() { $ip -4 addr show dev wlp6s0 | grep -q " 192.168.1.2/24 "; }
         if [ "$carrier" = "1" ]; then
           if parked; then $ip addr del 192.168.1.2/24 dev wlp6s0; fi
-          $ip route del 192.168.1.0/24 dev wlp6s0 2>/dev/null || true
+          $ip route del 192.168.1.0/24 dev wlp6s0 src 192.168.1.2 2>/dev/null || true
           $ip route del 192.168.1.1/32 dev wlp6s0 2>/dev/null || true
           $ip route replace 192.168.1.0/24 dev br0 src 192.168.1.2
         else
