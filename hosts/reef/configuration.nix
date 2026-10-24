@@ -255,25 +255,47 @@
     linkConfig.RequiredForOnline = "routable";
   };
 
-  # Pods resolve through CoreDNS, which forwards to the LAN router
-  # 192.168.1.1. br0 (static 192.168.1.2) and wlp6s0 (DHCP) share
-  # 192.168.1.0/24 and the br0 connected route wins, but the router does not
-  # answer reef on br0. Pin the router to wlp6s0, which NetworkManager manages
-  # (networkd leaves it unmanaged), whenever the link comes up or its lease
-  # changes. No src: the kernel uses wlp6s0's current DHCP address.
-  networking.networkmanager.dispatcherScripts = [
-    {
-      type = "basic";
-      source = pkgs.writeShellScript "reef-router-via-wlp6s0" ''
-        [ "$1" = wlp6s0 ] || exit 0
-        case "$2" in
-          up|dhcp4-change|reapply)
-            ${pkgs.iproute2}/bin/ip route replace 192.168.1.1/32 dev wlp6s0
-            ;;
-        esac
+  # The LAN identity (192.168.1.2) lives on br0, whose only path to the switch
+  # is enp5s0. When that cable is out br0 still reports carrier through the
+  # vm-* taps, so networkd keeps the address, the br0 connected route wins for
+  # 192.168.1.0/24, and every LAN packet black-holes into a bridge with no
+  # egress -- which is also why the router does not answer reef on br0. Trust
+  # the uplink's carrier, not the bridge's: while enp5s0 is down, park the same
+  # address on wlp6s0 (the link that does reach the switch) and pin the
+  # 192.168.1.0/24 and gateway routes there, so the node IP stays reachable
+  # from the LAN in both directions and pods keep resolving through the router.
+  # When the cable is back the parked address and route pins are withdrawn and
+  # br0 owns the LAN again.
+  systemd.services.reef-lan-identity = {
+    description = "Park the reef LAN identity on whichever uplink is live";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "reef-lan-identity" ''
+        set -eu
+        ip=${pkgs.iproute2}/bin/ip
+        carrier=$(cat /sys/class/net/enp5s0/carrier 2>/dev/null || echo 0)
+        parked() { $ip -4 addr show dev wlp6s0 | grep -q " 192.168.1.2/24 "; }
+        if [ "$carrier" = "1" ]; then
+          if parked; then $ip addr del 192.168.1.2/24 dev wlp6s0; fi
+          $ip route del 192.168.1.0/24 dev wlp6s0 2>/dev/null || true
+          $ip route del 192.168.1.1/32 dev wlp6s0 2>/dev/null || true
+          $ip route replace 192.168.1.0/24 dev br0 src 192.168.1.2
+        else
+          if ! parked; then $ip addr replace 192.168.1.2/24 dev wlp6s0; fi
+          $ip route replace 192.168.1.0/24 dev wlp6s0 src 192.168.1.2
+          $ip route replace 192.168.1.1/32 dev wlp6s0
+        fi
       '';
-    }
-  ];
+    };
+  };
+
+  systemd.timers.reef-lan-identity = {
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnBootSec = "20s";
+      OnUnitActiveSec = "30s";
+    };
+  };
 
   environment.gnome.excludePackages =
     (with pkgs; [
