@@ -61,6 +61,16 @@
   # upsc / upscmd / upsrw on PATH for manual queries.
   environment.systemPackages = [ pkgs.nut ];
 
+  # The driver gives up once when the UPS is absent at start (2026-10-27: it failed at 18:18,
+  # the UPS was plugged in at 18:33, and it stayed down). Retry, and never hit the start limit.
+  systemd.services.upsdrv = {
+    unitConfig.StartLimitIntervalSec = 0;
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = 30;
+    };
+  };
+
   # UPS load alarm.
   #
   # Alerts via Telegram when the UPS approaches or exceeds its 1000 W rating.
