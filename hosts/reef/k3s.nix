@@ -19,8 +19,20 @@
       # continue until enough headroom exists for PV and VM bursts.
       "--kubelet-arg=image-gc-high-threshold=80"
       "--kubelet-arg=image-gc-low-threshold=70"
+      # CoreDNS forwards to the kubelet resolv.conf; pin it so pod DNS does
+      # not follow systemd-resolved onto whichever uplink is currently up.
+      "--resolv-conf=/etc/rancher/k3s/resolv.conf"
     ];
   };
+
+  environment.etc."rancher/k3s/resolv.conf".text = ''
+    nameserver 1.1.1.1
+    nameserver 8.8.8.8
+    nameserver 1.0.0.1
+  '';
+  systemd.services.k3s.restartTriggers = [
+    config.environment.etc."rancher/k3s/resolv.conf".source
+  ];
 
   virtualisation.docker = {
     enable = true;
