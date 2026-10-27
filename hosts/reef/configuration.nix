@@ -15,6 +15,7 @@
     ./ups.nix
     ./hardening.nix
     ./media.nix
+    ./gpu-unlock.nix
     # TODO: Unable to initialize capture methodAdd Cachix
   ];
 
