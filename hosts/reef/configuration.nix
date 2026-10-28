@@ -242,9 +242,10 @@
   systemd.network.networks."10-lan-bridge" = {
     matchConfig.Name = "br0";
     networkConfig = {
-      Address = ["192.168.1.2/24"];
-      Gateway = "192.168.1.1";
-      DNS = ["192.168.1.1"];
+      # 192.168.1.2 stays: k3s, netconsole and the bypass rules use it. The live uplink is the 192.168.8.0/24 router (since 2026-10-27).
+      Address = ["192.168.1.2/24" "192.168.8.88/24"];
+      Gateway = "192.168.8.1";
+      DNS = ["1.1.1.1"];
     };
     bridgeVLANs = [
       {
